@@ -2,10 +2,11 @@ import {Component, OnInit} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {ProduitModel} from '../model/produit';
 import {ProduitService} from '../services/produit-service';
+import {RouterLink} from '@angular/router';
 
 @Component({
   selector: 'app-add-produit',
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   templateUrl: './add-produit.html',
 })
 export class AddProduit implements OnInit {

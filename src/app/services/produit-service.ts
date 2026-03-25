@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {ProduitModel} from '../model/produit';
+import {Produits} from '../produits/produits';
 
 @Injectable({
   providedIn: 'root',
@@ -21,8 +22,32 @@ export class ProduitService {
     return this.produits;
   }
 
+  consulterProduit(id:number): ProduitModel{
+    return this.produits.find(p => p.idProduit == id)!;
+  }
+
+  trierProduits(){
+    this.produits = this.produits.sort((n1,n2) => {
+      if (n1.idProduit! > n2.idProduit!) {
+        return 1;
+      }
+      if (n1.idProduit! < n2.idProduit!) {
+        return -1;
+      }
+      return 0;
+    });
+  }
+
   addProduit(produit: ProduitModel){
     this.produits.push(produit);
+  }
+
+  updateProduit(p:ProduitModel)
+  {
+    // console.log(p);
+    this.supprimerProduit(p);
+    this.addProduit(p);
+    this.trierProduits();
   }
 
   supprimerProduit( prod: ProduitModel) {
