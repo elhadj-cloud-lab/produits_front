@@ -1,7 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import {Router, RouterLink} from '@angular/router';
 import {DatePipe} from '@angular/common';
-import {ProduitModel} from '../model/produit';
+import {ProduitModel} from '../model/produit.model';
 import {ProduitService} from '../services/produit-service';
 
 @Component({
