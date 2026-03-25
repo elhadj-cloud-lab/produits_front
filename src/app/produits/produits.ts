@@ -1,0 +1,39 @@
+import {Component, OnInit} from '@angular/core';
+import {Router, RouterLink} from '@angular/router';
+import {DatePipe} from '@angular/common';
+import {ProduitModel} from '../model/produit';
+import {ProduitService} from '../services/produit-service';
+
+@Component({
+  selector: 'app-produits',
+  imports: [
+    DatePipe,
+    RouterLink
+  ],
+  templateUrl: './produits.html',
+})
+export class Produits implements OnInit {
+
+  produits! : ProduitModel[];
+
+  constructor(private produitService: ProduitService) {
+
+  }
+
+  ngOnInit() {
+    this.produits = this.produitService.listeProduits();
+  }
+
+  supprimerProduit(produit: ProduitModel) {
+    let conf = confirm("Etes-vous sûr ?");
+    if (conf)
+      this.produitService.supprimerProduit(produit);
+  }
+
+  modifierProduit(produit: ProduitModel) {
+    console.log(produit);
+
+  }
+
+
+}
