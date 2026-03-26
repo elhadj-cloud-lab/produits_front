@@ -28,9 +28,9 @@
       <label>Categorie</label>
       <select class="form-control form-control-lg" id="idCat" name="idCat"
               [(ngModel)]="updatedCatId">
-        @for(cat of categories; track cat.idCat)
+        @for(cat of categories; track cat.idCategorie)
         {
-          <option [value]="cat.idCat"> {{cat.nomCat}} </option>
+          <option [value]="cat.idCategorie"> {{cat.nomCategorie}} </option>
         }
       </select>
     </div>

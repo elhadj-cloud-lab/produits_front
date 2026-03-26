@@ -3,7 +3,7 @@
     <h2>Ajouter un Produit :</h2>
   </div>
   <form >
-    <div class="col-sm-2 col-md-2 col-lg-2">
+    <div hidden class="col-sm-2 col-md-2 col-lg-2">
       <label >ID Produit</label>
       <input type="text" [(ngModel)]="newProduit.idProduit"
              name="idProduit" class="form-control">
@@ -27,14 +27,12 @@
       <label>Categorie</label>
 
       <select class="form-control form-control-lg" id="idCat" name="idCat" [(ngModel)]="newIdCat">
-        @for(cat of categories; track cat.idCat){
-          <option  [value]="cat.idCat">  {{cat.nomCat}}
+        @for(cat of categories; track cat.idCategorie){
+          <option  [value]="cat.idCategorie">  {{cat.nomCategorie}}
           </option>
         }
       </select>
     </div>
-
-
     <div class="mt-2">
       <button type="submit" (click)="addProduit()"class="btn btn-success">Ajouter</button>
     </div>
