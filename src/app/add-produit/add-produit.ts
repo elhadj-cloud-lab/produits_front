@@ -17,21 +17,22 @@ export class AddProduit implements OnInit {
   newIdCat! : number;
   newCategorie! : Categorie;
 
-  message! :string
-
   constructor(private produitService: ProduitService,
               private router: Router,) {
   }
 
   ngOnInit() {
-    this.categories = this.produitService.listeCategories();
+    this.produitService.listeCategories().subscribe(cats => {
+      this.categories = cats;
+    });
   }
 
-  addProduit() {
-    this.newCategorie = this.produitService.consulterCategorie(this.newIdCat);
-    this.newProduit.categorie = this.newCategorie;
-    this.produitService.addProduit(this.newProduit);
-    this.router.navigate(['produits']);
+  addProduit(){
+    this.newProduit.categorie = this.categories.find(cat => cat.idCategorie == this.newIdCat)!;
+    this.produitService.addProduit(this.newProduit)
+      .subscribe(prod => {
+        this.router.navigate(['produits']);
+      });
   }
 
 }

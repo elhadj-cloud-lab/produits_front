@@ -16,24 +16,26 @@ export class Produits implements OnInit {
 
   produits! : ProduitModel[];
 
-  constructor(private produitService: ProduitService) {
+  constructor( private produitService: ProduitService) {
 
   }
 
   ngOnInit() {
-    this.produits = this.produitService.listeProduits();
+    this.chargerProduits();
+  }
+
+  chargerProduits(){
+    this.produitService.listerProduits().subscribe(prods => {
+      this.produits = prods;
+    });
   }
 
   supprimerProduit(produit: ProduitModel) {
     let conf = confirm("Etes-vous sûr ?");
     if (conf)
-      this.produitService.supprimerProduit(produit);
+      this.produitService.supprimerProduit(produit.idProduit).subscribe(() => {
+        this.chargerProduits();
+      });
   }
-
-  modifierProduit(produit: ProduitModel) {
-    console.log(produit);
-
-  }
-
 
 }
