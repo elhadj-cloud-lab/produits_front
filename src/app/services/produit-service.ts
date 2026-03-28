@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import {HttpClient, HttpHeaders} from '@angular/common/http';
+import {HttpClient, HttpHeaders, HttpParams} from '@angular/common/http';
 import {ProduitModel} from '../model/produit.model';
 import {Observable} from 'rxjs';
 import {Categorie} from '../model/categorie.model';
@@ -57,5 +57,26 @@ export class ProduitService {
 
   listeCategories():Observable<Categorie[]>{
     return this.http.get<Categorie[]>(environment.apiURLCategorie);
+  }
+
+  //rechercherParCategorie(idCategorie: number):Observable< ProduitModel[]> {
+    //const url = `${environment.apiURL}/search/by-categorie-id?${idCategorie}`;
+    //return this.http.get<ProduitModel[]>(url);
+  //}
+
+  rechercherParCategorie(idCategorie: number): Observable<ProduitModel[]> {
+    const params = new HttpParams().set('idCategorie', idCategorie);
+
+    return this.http.get<ProduitModel[]>(
+      `${environment.apiURL}/search/by-categorie-id`, { params }
+    );
+  }
+
+  rechercherParNom(nom: string):Observable< ProduitModel[]> {
+    const params = new HttpParams().set('nom', nom);
+
+    return this.http.get<ProduitModel[]>(
+      `${environment.apiURL}/search/by-nom-contains`, { params }
+    );
   }
 }
