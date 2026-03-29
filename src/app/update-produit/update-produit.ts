@@ -29,7 +29,7 @@ export class UpdateProduit implements OnInit {
     this.produitService.consulterProduit(
       this.activatedRoute.snapshot.params['id']).subscribe( produits =>{
         this.currentProduit = produits;
-        this.updatedCatId = this.currentProduit.categorie.idCategorie;
+        //this.updatedCatId = this.currentProduit.categorie.idCategorie;
       } ) ;
   }
 
