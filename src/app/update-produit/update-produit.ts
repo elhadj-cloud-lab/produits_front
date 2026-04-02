@@ -5,6 +5,7 @@ import {ActivatedRoute, Router} from '@angular/router';
 import {FormsModule} from '@angular/forms';
 import {DatePipe} from '@angular/common';
 import {Categorie} from '../model/categorie.model';
+import {AuthService} from '../services/auth-service';
 
 @Component({
   selector: 'app-update-produit',
@@ -20,7 +21,8 @@ export class UpdateProduit implements OnInit {
 
   constructor(private activatedRoute: ActivatedRoute,
               private router :Router,
-              private produitService: ProduitService
+              private produitService: ProduitService,
+              public authService: AuthService,
   ) { }
   ngOnInit() {
     this.produitService.listeCategories().subscribe(categories => {

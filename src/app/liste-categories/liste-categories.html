@@ -1,0 +1,38 @@
+<div class="container">
+  <div class="card shadow mb-4">
+    <div class="card-body">
+
+      <div class="col-sm-4 col-md-4 col-lg-4 mb-4">
+        <app-update-categorie
+          [categorie]="updatedCategorie"
+          (categorieUpdated)="categorieUpdated($event)"
+          (annulerEvent)="nouvelleCategorie()"
+          [ajout]="ajout">
+        </app-update-categorie>
+      </div>
+
+      <table class="table table-striped">
+        <thead>
+        <tr> <th>Id</th><th>Nom Catégorie</th> <th>Description</th> </tr>
+        </thead>
+
+        @for(cat of categories; track cat.idCategorie)
+        {
+          <tbody >
+          <tr>
+            <td>{{cat.idCategorie}}</td>
+            <td>{{cat.nomCategorie}}</td>
+            <td>{{cat.description}}</td>
+
+
+            @if(authService.isAdmin()) {
+              <td><a class="btn btn-success"  (click)="updateCategorie(cat)">Editer</a></td>
+              <td><a class="btn btn-danger btn-sm" (click)="supprimerCategorie(cat)">Supprimer</a></td>
+            }
+          </tr>
+          </tbody>
+        }
+      </table>
+    </div>
+  </div>
+</div>
