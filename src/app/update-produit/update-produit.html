@@ -34,8 +34,10 @@
         }
       </select>
     </div>
-    <div class="mt-2">
-      <button type="submit" (click)="updateProduit()" class="btn btn-success">Modifer</button>
-    </div>
+    @if(authService.isAdmin()) {
+      <div class="mt-2">
+        <button type="submit" (click)="updateProduit()" class="btn btn-success">Modifer</button>
+      </div>
+    }
   </form>
 </div>

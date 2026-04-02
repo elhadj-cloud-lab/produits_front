@@ -3,6 +3,7 @@ import {Router, RouterLink} from '@angular/router';
 import {DatePipe} from '@angular/common';
 import {ProduitModel} from '../model/produit.model';
 import {ProduitService} from '../services/produit-service';
+import {AuthService} from '../services/auth-service';
 
 @Component({
   selector: 'app-produits',
@@ -16,7 +17,8 @@ export class Produits implements OnInit {
 
   produits! : ProduitModel[];
 
-  constructor( private produitService: ProduitService) {
+  constructor( private produitService: ProduitService,
+               public authService: AuthService) {
 
   }
 

@@ -17,7 +17,9 @@
             Produits
           </a>
           <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-            <li><a class="dropdown-item" [routerLink]="['/add-produit']">Ajouter</a><li>
+            @if(authService.isAdmin()) {
+              <li><a class="dropdown-item" [routerLink]="['/add-produit']">Ajouter</a><li>
+            }
             <li><a class="dropdown-item" href="#">Lister</a></li>
             <li><a class="dropdown-item" [routerLink]="['/rechercheParCategorie']">Recherche Par Catégorie</a></li>
             <li><a class="dropdown-item" routerLink="/rechercheParNom" >Recherche Par Nom</a></li>
@@ -29,11 +31,15 @@
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown"
              role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            [username]
+            [{{authService.loggedUser}}]
           </a>
           <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-            <li><a class="dropdown-item" href="#">Login</a></li>
-            <li><a class="dropdown-item" href="#">Logout</a></li>
+            @if(!authService.isloggedIn){
+              <li><a class="dropdown-item"routerLink="/login">Login</a></li>
+            }
+            @else {
+              <li><a class="dropdown-item" (click) = "onLogout()">Logout</a></li>
+            }
             <li><a class="dropdown-item" href="#">Profile</a></li>
           </ul>
         </li>
