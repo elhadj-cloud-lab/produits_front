@@ -27,13 +27,6 @@ export class RechercheParNom implements OnInit {
     });
   }
 
-  // rechercherProds() {
-  //   this.produitService.rechercherParNom(this.nomProduit).subscribe(prods => {
-  //     console.log(prods);
-  //     this.produits = prods;
-  //   });
-  // }
-
   rechercherProds() {
     if (this.nomProduit)
       this.produitService

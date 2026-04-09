@@ -33,14 +33,27 @@
              role="button" data-bs-toggle="dropdown" aria-expanded="false">
             [{{authService.loggedUser}}]
           </a>
-          <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-            @if(!authService.isloggedIn){
-              <li><a class="dropdown-item"routerLink="/login">Login</a></li>
-            }
-            @else {
-              <li><a class="dropdown-item" (click) = "onLogout()">Logout</a></li>
-            }
-            <li><a class="dropdown-item" href="#">Profile</a></li>
+<!--          <ul class="dropdown-menu" aria-labelledby="navbarDropdown">-->
+<!--            @if(!authService.isloggedIn){-->
+<!--              <li><a class="dropdown-item"routerLink="/login">Connexion</a></li>-->
+<!--            }-->
+<!--            @else {-->
+<!--              <li><a class="dropdown-item" (click) = "onLogout()">Deconnexion</a></li>-->
+<!--            }-->
+<!--            <li><a class="dropdown-item" href="#">Profile</a></li>-->
+<!--          </ul>-->
+          <ul class="navbar-nav ms-auto m-2">
+            <li class="nav-item dropdown">
+              <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                @if (!authService.isloggedIn) {
+                  <li><a class="dropdown-item" routerLink="/login">Connexion</a></li>
+                }
+                @else {
+                  <li><a class="dropdown-item" (click)="onLogout()">Déconnexion</a></li>
+                }
+                <li><a class="dropdown-item" href="#">Profile</a></li>
+              </ul>
+            </li>
           </ul>
         </li>
       </ul>
