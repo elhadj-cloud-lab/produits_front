@@ -17,56 +17,35 @@ export class ProduitService {
               private authService: AuthService,) { }
 
   listerProduits(): Observable<ProduitModel[]> {
-    let jwt = this.authService.getToken();
-    jwt = "Bearer "+jwt;
-    let httpHeaders = new HttpHeaders({"Authorization":jwt})
-    return this.http.get<ProduitModel[]>(environment.apiURL,{headers:httpHeaders});
+    return this.http.get<ProduitModel[]>(environment.apiURL);
   }
 
   consulterProduit(id: number): Observable<ProduitModel> {
-    let jwt = this.authService.getToken();
-    jwt = "Bearer "+jwt;
-    let httpHeaders = new HttpHeaders({"Authorization":jwt})
     const url = `${environment.apiURL}/${id}`;
-    return this.http.get<ProduitModel>(url,{headers:httpHeaders});
+    return this.http.get<ProduitModel>(url);
   }
 
   addProduit(produit: ProduitModel): Observable<ProduitModel> {
-    let jwt = this.authService.getToken();
-    jwt = "Bearer "+jwt;
-    let httpHeaders = new HttpHeaders({"Authorization":jwt})
-    return this.http.post<ProduitModel>(environment.apiURL, produit ,{headers:httpHeaders});
+    return this.http.post<ProduitModel>(environment.apiURL, produit);
   }
 
   updateProduit(produit: ProduitModel): Observable<ProduitModel> {
-    let jwt = this.authService.getToken();
-    jwt = "Bearer "+jwt;
-    let httpHeaders = new HttpHeaders({"Authorization":jwt})
     const url = `${environment.apiURL}/${produit.idProduit}`;
-    return this.http.put<ProduitModel>(url, produit, {headers:httpHeaders});
+    return this.http.put<ProduitModel>(url, produit);
   }
 
   supprimerProduit(id: number) {
-    let jwt = this.authService.getToken();
-    jwt = "Bearer "+jwt;
-    let httpHeaders = new HttpHeaders({"Authorization":jwt})
     const url = `${environment.apiURL}/${id}`;
-    return this.http.delete(url, {headers:httpHeaders});
+    return this.http.delete(url);
   }
 
   listeCategories(): Observable<Categorie[]> {
-    let jwt = this.authService.getToken();
-    jwt = "Bearer "+jwt;
-    let httpHeaders = new HttpHeaders({"Authorization":jwt})
-    return this.http.get<Categorie[]>(environment.apiURLCategorie ,{headers:httpHeaders});
+    return this.http.get<Categorie[]>(environment.apiURLCategorie);
   }
 
   rechercherParCategorie(idCategorie: number): Observable<ProduitModel[]> {
     const params = new HttpParams().set('idCategorie', idCategorie);
-    let jwt = this.authService.getToken();
-    jwt = "Bearer "+jwt;
-    let httpHeaders = new HttpHeaders({"Authorization":jwt})
-    return this.http.get<ProduitModel[]>(`${environment.apiURL}/search/by-categorie-id`, {params, headers:httpHeaders}
+    return this.http.get<ProduitModel[]>(`${environment.apiURL}/search/by-categorie-id`, {params}
     );
   }
 
@@ -78,24 +57,15 @@ export class ProduitService {
   }
 
   ajouterCategorie(cat: Categorie): Observable<Categorie> {
-    let jwt = this.authService.getToken();
-    jwt = "Bearer "+jwt;
-    let httpHeaders = new HttpHeaders({"Authorization":jwt})
-    return this.http.post<Categorie>(environment.apiURLCategorie, cat,{headers:httpHeaders});
+    return this.http.post<Categorie>(environment.apiURLCategorie, cat);
   }
 
   updateCategorie(categorie: Categorie): Observable<Categorie> {
     const url = `${environment.apiURLCategorie}/${categorie.idCategorie}`;
-    let jwt = this.authService.getToken();
-    jwt = "Bearer "+jwt;
-    let httpHeaders = new HttpHeaders({"Authorization":jwt})
-    return this.http.put<Categorie>(url, categorie, {headers:httpHeaders});
+    return this.http.put<Categorie>(url, categorie);
   }
 
   supprimerCategorie(id: number): Observable<void> {
-    let jwt = this.authService.getToken();
-    jwt = "Bearer "+jwt;
-    let httpHeaders = new HttpHeaders({"Authorization":jwt})
-    return this.http.delete<void>(`${environment.apiURLCategorie}/${id}`, {headers:httpHeaders});
+    return this.http.delete<void>(`${environment.apiURLCategorie}/${id}`);
   }
 }
