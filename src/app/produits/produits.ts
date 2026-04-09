@@ -15,7 +15,7 @@ import {AuthService} from '../services/auth-service';
 })
 export class Produits implements OnInit {
 
-  produits! : ProduitModel[];
+  produits: ProduitModel[] = [];
 
   constructor( private produitService: ProduitService,
                public authService: AuthService) {
