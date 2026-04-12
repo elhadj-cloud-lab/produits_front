@@ -19,7 +19,6 @@ export class Produits implements OnInit {
 
   constructor( private produitService: ProduitService,
                public authService: AuthService) {
-
   }
 
   ngOnInit() {
