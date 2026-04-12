@@ -27,7 +27,6 @@ export class RechercheParCategorie implements OnInit {
     });
   }
 
-
   onChange() {
     this.produitService.rechercherParCategorie(this.idCategorie).
     subscribe(prods =>{this.produits=prods});

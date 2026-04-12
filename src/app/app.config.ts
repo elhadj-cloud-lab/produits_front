@@ -6,6 +6,7 @@ import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import {provideHttpClient, withInterceptors} from '@angular/common/http';
 import {tokenInterceptor} from './services/token-interceptor';
+import {provideToastr} from 'ngx-toastr';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -13,7 +14,8 @@ export const appConfig: ApplicationConfig = {
     //provideZonelessChangeDetection(),
     provideRouter(routes),
     provideHttpClient(),
-    provideHttpClient(withInterceptors([tokenInterceptor]))
+    provideHttpClient(withInterceptors([tokenInterceptor])),
+    provideToastr()
   ]
 
 };

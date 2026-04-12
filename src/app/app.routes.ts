@@ -8,6 +8,8 @@ import {ListeCategories} from './liste-categories/liste-categories';
 import {Login} from './login/login';
 import {Forbidden} from './forbidden/forbidden';
 import {produitGuard} from './produit-guard';
+import {Register} from './register/register';
+import {VerifEmail} from './verif-email/verif-email';
 
 export const routes: Routes = [
   {path: "produits", component: Produits },
@@ -18,5 +20,7 @@ export const routes: Routes = [
   {path: "rechercheParNom", component : RechercheParNom},
   {path: 'login', component : Login},
   {path: 'app-forbidden', component: Forbidden},
+  {path:'register',component: Register},
+  { path: 'verifEmail', component: VerifEmail },
   {path: "listeCategories", component : ListeCategories},
 ];

@@ -1,6 +1,7 @@
 import {Component, OnInit, signal} from '@angular/core';
-import {Router, RouterLink, RouterOutlet} from '@angular/router';
+import {NavigationEnd, Router, RouterLink, RouterOutlet} from '@angular/router';
 import {AuthService} from './services/auth-service';
+import {filter} from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -15,8 +16,18 @@ export class App implements OnInit {
 
   ngOnInit(): void {
     this.authService.loadToken();
-    if (this.authService.getToken()==null || this.authService.isTokenExpired())
-      this.router.navigate(['/login']);
+    const publicRoutes = ['/login', '/register', '/verifEmail'];
+
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe((event: NavigationEnd) => {
+      const currentUrl = event.urlAfterRedirects;
+
+      if (!publicRoutes.includes(currentUrl) &&
+        (this.authService.getToken() == null || this.authService.isTokenExpired())) {
+        this.router.navigate(['/login']);
+      }
+    });
   }
 
   onLogout(){

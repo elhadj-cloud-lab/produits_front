@@ -13,12 +13,21 @@ export class AuthService {
   public isloggedIn: Boolean = false;
   public roles!:string[];
   private helper = new JwtHelperService();
+  public regitredUser: User = new User();
+
 
   apiURL: string = 'http://localhost:8082/users';
   token!:string;
 
   constructor(private router: Router,
               private http : HttpClient) { }
+
+  setRegistredUser(user: User) {
+    this.regitredUser = user;
+  }
+  getRegistredUser() {
+    return this.regitredUser;
+  }
 
   login(user : User)
   {
@@ -70,9 +79,18 @@ export class AuthService {
     return  (this.roles.indexOf('ADMIN') >=0);
   }
 
-  isTokenExpired(): Boolean
-  {
+  isTokenExpired(): Boolean {
     return  this.helper.isTokenExpired(this.token);
+  }
+
+  registerUser(user: User) {
+    return this.http.post<User>(this.apiURL + '/register', user, {
+      observe: 'response',
+    });
+  }
+
+  validateEmail(code : string){
+    return this.http.get<User>(this.apiURL+'/verifyEmail/'+code);
   }
 
 }

@@ -24,7 +24,6 @@
             <td>{{cat.nomCategorie}}</td>
             <td>{{cat.description}}</td>
 
-
             @if(authService.isAdmin()) {
               <td><a class="btn btn-success"  (click)="updateCategorie(cat)">Editer</a></td>
               <td><a class="btn btn-danger btn-sm" (click)="supprimerCategorie(cat)">Supprimer</a></td>
