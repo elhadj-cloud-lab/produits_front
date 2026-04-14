@@ -23,12 +23,13 @@ export class Login {
     this.authService.login(this.user).subscribe({
       next: (data) => {
         let jwToken = data.headers.get('Authorization')!;
+        console.log('Token reçu :', jwToken);
         this.authService.saveToken(jwToken);
         this.router.navigate(['/']);
       },
       error: (err: any) => {
         this.err = 1;
-        if (err.error.errorCause=='disabled')
+        if (err.error && err.error.errorCause=='disabled')
           this.message="Utilisateur désactivé, Veuillez contacter votre Administrateur";
       }
     });

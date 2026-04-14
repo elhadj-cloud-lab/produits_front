@@ -3,8 +3,9 @@ import {HttpClient, HttpHeaders, HttpParams} from '@angular/common/http';
 import {ProduitModel} from '../model/produit.model';
 import {Observable} from 'rxjs';
 import {Categorie} from '../model/categorie.model';
-import {environment} from '../../environments/environment';
 import {AuthService} from './auth-service';
+import {Image} from '../model/image.model';
+import {environment} from '../../environments/environment.development';
 
 @Injectable({
   providedIn: 'root',
@@ -67,5 +68,28 @@ export class ProduitService {
 
   supprimerCategorie(id: number): Observable<void> {
     return this.http.delete<void>(`${environment.apiURLCategorie}/${id}`);
+  }
+
+  uploadImage(file: File, filename: string){
+    const imageFormData = new FormData();
+    imageFormData.append('image', file, filename);
+    const url = `${environment.apiURLImage + '/upload'}`;
+    return this.http.post<Image>(url, imageFormData);
+  }
+
+  loadImage(id: number): Observable<Image> {
+    const url = `${environment.apiURLImage + '/get/info'}/${id}`;
+    return this.http.get<Image>(url);
+  }
+
+  uploadImageProd(file: File, filename: string, idProd:number): Observable<any>{
+    const imageFormData = new FormData();
+    imageFormData.append('image', file, filename);
+    const url = `${environment.apiURLImage + '/uplaodImageProd'}/${idProd}`;
+    return this.http.post(url, imageFormData);
+  }
+
+  supprimerImage(id : number) {
+    return this.http.delete<void>(`${environment.apiURLImage}/delete/${id}`);
   }
 }

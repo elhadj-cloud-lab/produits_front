@@ -4,6 +4,7 @@ import {ProduitModel} from '../model/produit.model';
 import {ProduitService} from '../services/produit-service';
 import { Router } from '@angular/router';
 import {Categorie} from '../model/categorie.model';
+import {Image} from '../model/image.model';
 
 @Component({
   selector: 'app-add-produit',
@@ -16,6 +17,8 @@ export class AddProduit implements OnInit {
   categories! : Categorie[];
   newIdCat! : number;
   newCategorie! : Categorie;
+  uploadedImage!: File;
+  imagePath: any;
 
   constructor(private produitService: ProduitService,
               private router: Router,) {
@@ -27,11 +30,27 @@ export class AddProduit implements OnInit {
     });
   }
 
+  onImageUpload(event: any) {
+    this.uploadedImage = event.target.files[0];
+    var reader = new FileReader();
+    reader.readAsDataURL(this.uploadedImage);
+    reader.onload = (_event) => {
+      this.imagePath = reader.result;
+    };
+  }
+
   addProduit(){
-    this.newProduit.categorie = this.categories.find(cat => cat.idCategorie == this.newIdCat)!;
-    this.produitService.addProduit(this.newProduit)
-      .subscribe(prod => {
-        this.router.navigate(['produits']);
+    this.produitService
+      .uploadImage(this.uploadedImage, this.uploadedImage.name)
+      .subscribe((img: Image) => {
+        this.newProduit.image=img;
+        this.newProduit.categorie = this.categories.find(cat => cat.idCategorie
+          == this.newIdCat)!;
+        this.produitService
+          .addProduit(this.newProduit)
+          .subscribe(() => {
+            this.router.navigate(['produits']);
+          });
       });
   }
 

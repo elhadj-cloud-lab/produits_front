@@ -28,6 +28,10 @@ export class Produits implements OnInit {
   chargerProduits(){
     this.produitService.listerProduits().subscribe(prods => {
       this.produits = prods;
+      this.produits.forEach((prod) => {
+        prod.imageStr = 'data:' + prod.images[0]?.type + ';base64,' +
+          prod.images[0].image;
+      });
     });
   }
 

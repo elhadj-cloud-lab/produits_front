@@ -16,14 +16,33 @@ function toExclude(url :string)
 
 export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
+  console.log('URL interceptée :', req.url);
+  console.log('toExclude :', toExclude(req.url));
+  console.log('Token :', authService.getToken());
+
 
   //tester s'il sagit de login, on n'ajoute pas le header Authorization
   //puisqu'on a pas encode de JWT (il est null)
-  if(!toExclude(req.url)){
-    let jwt = authService.getToken();
-    let reqWithToken = req.clone( {
-      setHeaders: { Authorization : "Bearer "+jwt}
-    })
+  // if(!toExclude(req.url)){
+  //   let jwt = authService.getToken();
+  //   let reqWithToken = req.clone( {
+  //     setHeaders: { Authorization : "Bearer "+jwt}
+  //   })
+  //   return next(reqWithToken);
+  // }
+  if (toExclude(req.url)) {
+    return next(req);
+  }
+
+  const jwt = authService.getToken();
+
+  // ✅ très important : ne pas envoyer undefined
+  if (jwt) {
+    const reqWithToken = req.clone({
+      setHeaders: {
+        Authorization: `Bearer ${jwt}`
+      }
+    });
     return next(reqWithToken);
   }
   return next(req);

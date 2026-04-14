@@ -23,6 +23,11 @@ export class App implements OnInit {
     ).subscribe((event: NavigationEnd) => {
       const currentUrl = event.urlAfterRedirects;
 
+      console.log('NavigationEnd URL:', currentUrl); // ✅ ajouter
+      console.log('Token:', this.authService.getToken()); // ✅ ajouter
+      console.log('isExpired:', this.authService.isTokenExpired()); // ✅ ajouter
+
+
       if (!publicRoutes.includes(currentUrl) &&
         (this.authService.getToken() == null || this.authService.isTokenExpired())) {
         this.router.navigate(['/login']);
