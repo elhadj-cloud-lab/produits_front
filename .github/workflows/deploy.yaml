@@ -1,0 +1,238 @@
+name: CI - Build & Push Docker
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+  push:
+    branches: [ "main" ]
+    tags: [ "v*" ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci-pr:
+    name: Build & Test (PR)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test -- --watch=false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=sha
+            type=sha,format=short
+
+      - name: Docker build (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  ci-main:
+    name: Build, Test & Push (MAIN)
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/main')
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test -- --watch=false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=sha
+            type=sha,format=short
+            type=raw,value=latest
+
+      - name: Build and push Docker
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  release:
+    name: Build, Test & Push (TAG)
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test -- --watch=false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=sha
+            type=sha,format=short
+            type=ref,event=tag
+
+      - name: Build and push Docker
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  gitops-update-dev:
+    name: GitOps - Update Helm values (DEV)
+    if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/main') && secrets.GITOPS_REPO != '' && secrets.GITOPS_TOKEN != '' }}
+    runs-on: ubuntu-latest
+    needs: [ci-main]
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout GitOps repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.GITOPS_REPO }}
+          token: ${{ secrets.GITOPS_TOKEN }}
+
+      - name: Update image tag
+        run: |
+          VALUES_FILE="apps/produits-front/values-dev.yaml"
+          SHORT_SHA="${GITHUB_SHA::7}"
+          sed -i "s/^  tag: .*/  tag: ${SHORT_SHA}/" "$VALUES_FILE"
+          git status --porcelain
+
+      - name: Commit and push
+        run: |
+          SHORT_SHA="${GITHUB_SHA::7}"
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add .
+          git commit -m "produits-front: deploy ${SHORT_SHA}" || exit 0
+          git push
+
+  gitops-update-prod:
+    name: GitOps - Update Helm values (PROD)
+    if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && secrets.GITOPS_REPO != '' && secrets.GITOPS_TOKEN != '' }}
+    runs-on: ubuntu-latest
+    needs: [release]
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout GitOps repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.GITOPS_REPO }}
+          token: ${{ secrets.GITOPS_TOKEN }}
+
+      - name: Update image tag
+        run: |
+          VALUES_FILE="apps/produits-front/values-prod.yaml"
+          SHORT_SHA="${GITHUB_SHA::7}"
+          sed -i "s/^  tag: .*/  tag: ${SHORT_SHA}/" "$VALUES_FILE"
+          git status --porcelain
+
+      - name: Commit and push
+        run: |
+          SHORT_SHA="${GITHUB_SHA::7}"
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add .
+          git commit -m "produits-front: deploy ${SHORT_SHA}" || exit 0
+          git push
