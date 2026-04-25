@@ -16,7 +16,7 @@ export class AuthService {
   public regitredUser: User = new User();
 
 
-  apiURL: string = 'http://localhost:8082/users';
+  apiURL: string = 'http://localhost:8080/users';
   token!:string;
 
   constructor(private router: Router,
