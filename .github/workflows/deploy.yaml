@@ -63,9 +63,9 @@ jobs:
       - name: Lint
         run: npm run lint --if-present
 
-      - name: Run tests (Vitest)
+      - name: Run tests
         #run: npm test -- --watch=false --run
-        run: npm test -- --watch=false --no-watch
+        run: npm test -- --watch=false --no-watch --verbose
 
       - name: Build
         run: npm run build --prod
