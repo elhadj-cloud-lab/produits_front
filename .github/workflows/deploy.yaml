@@ -64,7 +64,8 @@ jobs:
         run: npm run lint --if-present
 
       - name: Run tests (Vitest)
-        run: npm test -- --watch=false --run  # ✅ Commande Vitest pour Angular 21
+        #run: npm test -- --watch=false --run
+        run: npm test -- --watch=false --no-watch
 
       - name: Build
         run: npm run build --prod
