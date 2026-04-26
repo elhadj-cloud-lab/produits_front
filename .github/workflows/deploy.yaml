@@ -64,7 +64,7 @@ jobs:
         run: npm run lint --if-present
 
       - name: Run tests
-        run: echo "Tests disabled for now - will enable later"
+        run: npm test -- --watch=false
 
       - name: Build
         run: npm run build -- --configuration production
@@ -111,7 +111,7 @@ jobs:
       - name: Build
         run: npm run build -- --configuration production
       - name: Test
-        run: echo "Tests disabled for now - will enable later"
+        run: npm test -- --watch=false
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Login to GHCR
@@ -159,7 +159,7 @@ jobs:
       - name: Build
         run: npm run build -- --configuration production
       - name: Test
-        run: echo "Tests disabled for now - will enable later"
+        run: npm test -- --watch=false
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Login to GHCR
