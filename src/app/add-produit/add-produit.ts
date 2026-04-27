@@ -17,6 +17,9 @@ export class AddProduit implements OnInit {
   newIdCat! : number;
   newCategorie! : Categorie;
 
+  uploadedImage!: File;
+  imagePath: any;
+
   constructor(private produitService: ProduitService,
               private router: Router,) {
   }
@@ -27,12 +30,32 @@ export class AddProduit implements OnInit {
     });
   }
 
-  addProduit(){
-    this.newProduit.categorie = this.categories.find(cat => cat.idCategorie == this.newIdCat)!;
-    this.produitService.addProduit(this.newProduit)
-      .subscribe(prod => {
+  addProduit() {
+    this.newProduit.categorie = this.categories.find(
+      cat => cat.idCategorie == this.newIdCat
+    )!;
+
+    this.produitService.addProduit(this.newProduit).subscribe((prod) => {
+      console.log("Produit sauvegardé =", prod);
+      console.log("ID produit =", prod.idProduit);
+
+      this.produitService.uploadImageProd(
+        this.uploadedImage,
+        this.uploadedImage.name,
+        prod.idProduit
+      ).subscribe(() => {
         this.router.navigate(['produits']);
       });
+    });
+  }
+
+  onImageUpload(event: any) {
+    this.uploadedImage = event.target.files[0];
+    var reader = new FileReader();
+    reader.readAsDataURL(this.uploadedImage);
+    reader.onload = (_event) => {
+      this.imagePath = reader.result;
+    };
   }
 
 }

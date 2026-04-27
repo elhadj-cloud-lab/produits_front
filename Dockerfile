@@ -1,17 +1,14 @@
-FROM node:20-alpine AS build
+FROM node:20-alpine AS builder
 
 WORKDIR /app
-
 COPY package*.json ./
-RUN npm ci
-
+RUN npm ci && npm cache clean --force
 COPY . .
-RUN npm run build
+RUN npm run build -- --configuration production
 
-FROM nginx:1.27-alpine
-
-COPY --from=build /app/dist/Produits_front/browser /usr/share/nginx/html
-
+# Servir avec serveur static Node.js
+FROM node:20-alpine
+RUN npm install -g serve
+COPY --from=builder /app/dist /dist
 EXPOSE 80
-
-ENTRYPOINT ["nginx", "-g", "daemon off;"]
+CMD ["sh", "-c", "serve -s /dist/* -l 80"]

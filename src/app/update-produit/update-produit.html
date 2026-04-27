@@ -34,6 +34,44 @@
         }
       </select>
     </div>
+    <div class="col-sm-16 col-md-16 col-lg-16">
+      <img [src]="myImage" class="card-img-top img-fluid rounded-start"  style="width: 500px; height: 300px" />
+    </div>
+
+    <div class="col-sm-16 col-md-16 col-lg-16">
+      <label class="mb-2">Image :</label>
+      <input type="file" (change)="onImageUpload($event)" class="form-control">
+    </div>
+
+    <div class="mt-2">
+      <button type="submit" (click)="onAddImageProduit()" class="btn btn-success">Ajouter Image</button>
+    </div>
+
+    <div class="card shadow mb-4">
+      <div class="card-body">
+        <table class="table table-striped">
+          <thead>
+          <tr>
+            <th>Images</th>
+          </tr>
+          </thead>
+          @for(img of currentProduit.images; track img.idImage)
+          {
+            <tbody>
+            <tr>
+              <td>
+                <img [src]="getImageUrl(img)" style="height:50px;width:100px">
+              </td>
+              <td style="width:20%">
+                <a class="btn btn-danger" (click)="supprimerImage(img)">Supprimer</a>
+              </td>
+            </tr>
+            </tbody>
+          }
+        </table>
+      </div>
+    </div>
+
     @if(authService.isAdmin()) {
       <div class="mt-2">
         <button type="submit" (click)="updateProduit()" class="btn btn-success">Modifer</button>

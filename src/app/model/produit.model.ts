@@ -1,4 +1,5 @@
 import {Categorie} from './categorie.model';
+import {Image} from './image.model';
 
 export class ProduitModel {
   idProduit!: number;
@@ -6,4 +7,6 @@ export class ProduitModel {
   prixProduit!: number;
   dateCreation!: Date;
   categorie?: Categorie;
+  imageStr!: string;
+  images!: Image[];
 }
