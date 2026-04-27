@@ -2,20 +2,20 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
-import { Login } from './login';
+import { VerifEmail } from './verif-email';
 
-describe('Login', () => {
-  let component: Login;
-  let fixture: ComponentFixture<Login>;
+describe('VerifEmail', () => {
+  let component: VerifEmail;
+  let fixture: ComponentFixture<VerifEmail>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [Login],
+      imports: [VerifEmail],
       providers: [provideRouter([]), provideHttpClientTesting()],
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(Login);
+    fixture = TestBed.createComponent(VerifEmail);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

@@ -5,7 +5,7 @@ import {Observable} from 'rxjs';
 import {Categorie} from '../model/categorie.model';
 import {AuthService} from './auth-service';
 import {Image} from '../model/image.model';
-import {environment} from '../../environments/environment.development';
+import {environment} from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
