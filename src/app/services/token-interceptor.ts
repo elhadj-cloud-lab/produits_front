@@ -1,9 +1,10 @@
-import { HttpInterceptorFn } from '@angular/common/http';
+import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { AuthService } from './auth-service';
 import { catchError, switchMap, throwError } from 'rxjs';
 
-const exclude_array: string[] = ['/login', '/register', '/verifyEmail', '/refresh'];
+const exclude_array: string[] = ['/login', '/register', '/verifyEmail', '/refresh', '/logout'];
+const RETRY_HEADER = 'X-Retry-After-Refresh';
 
 function toExclude(url: string) {
   for (const path of exclude_array) {
@@ -21,20 +22,47 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
     return next(req);
   }
 
-  const sendWithToken = (token: string) =>
-    next(req.clone({ setHeaders: { Authorization: 'Bearer ' + token } }));
+  const sendWithToken = (token: string, isRetry = false) => {
+    const headers: Record<string, string> = { Authorization: 'Bearer ' + token };
+    if (isRetry) {
+      headers[RETRY_HEADER] = 'true';
+    }
+    return next(req.clone({ setHeaders: headers }));
+  };
 
-  const token = authService.getToken();
+  const refreshAndRetry = () => {
+    if (!authService.getRefreshToken()) {
+      authService.logout();
+      return throwError(() => new Error('Session expirée'));
+    }
 
-  if (token && authService.isTokenExpired() && authService.getRefreshToken()) {
     return authService.refreshAccessToken().pipe(
-      switchMap(() => sendWithToken(authService.getToken())),
+      switchMap(() => sendWithToken(authService.getToken(), true)),
       catchError(() => {
         authService.logout();
         return throwError(() => new Error('Session expirée'));
       })
     );
+  };
+
+  const with401Retry = (source: ReturnType<typeof sendWithToken>) =>
+    source.pipe(
+      catchError((err: HttpErrorResponse) => {
+        if (err.status === 401 && !req.headers.has(RETRY_HEADER) && authService.getRefreshToken()) {
+          return refreshAndRetry();
+        }
+        if (err.status === 401) {
+          authService.logout();
+        }
+        return throwError(() => err);
+      })
+    );
+
+  const token = authService.getToken();
+
+  if (token && authService.isTokenExpired() && authService.getRefreshToken()) {
+    return refreshAndRetry();
   }
 
-  return sendWithToken(token);
+  return with401Retry(sendWithToken(token));
 };

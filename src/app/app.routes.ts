@@ -10,6 +10,7 @@ import {Forbidden} from './forbidden/forbidden';
 import {produitGuard} from './produit-guard';
 import {Register} from './register/register';
 import {VerifEmail} from './verif-email/verif-email';
+import {AdminUsers} from './admin-users/admin-users';
 
 export const routes: Routes = [
   {path: "produits", component: Produits },
@@ -23,4 +24,5 @@ export const routes: Routes = [
   {path:'register',component: Register},
   { path: 'verifEmail', component: VerifEmail },
   {path: "listeCategories", component : ListeCategories},
+  {path: "admin/users", component: AdminUsers, canActivate: [produitGuard]},
 ];

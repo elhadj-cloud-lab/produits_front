@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import {Router} from '@angular/router';
 import {HttpClient, HttpResponse} from '@angular/common/http';
-import {User} from '../model/user.model';
+import {AppUser, User} from '../model/user.model';
 import {JwtHelperService} from '@auth0/angular-jwt';
 import {catchError, finalize, Observable, shareReplay, tap, throwError} from 'rxjs';
 
@@ -115,14 +115,37 @@ export class AuthService {
   }
 
   logout() {
-    this.loggedUser = undefined!;
-    this.roles = undefined!;
-    this.token = undefined!;
-    this.refreshTokenValue = undefined!;
-    this.isloggedIn = false;
-    localStorage.removeItem('jwt');
-    localStorage.removeItem('refreshToken');
-    this.router.navigate(['/login']);
+    const refreshToken = this.getRefreshToken();
+    const token = this.getToken();
+
+    const clearLocal = () => {
+      this.loggedUser = undefined!;
+      this.roles = undefined!;
+      this.token = undefined!;
+      this.refreshTokenValue = undefined!;
+      this.isloggedIn = false;
+      localStorage.removeItem('jwt');
+      localStorage.removeItem('refreshToken');
+      this.router.navigate(['/login']);
+    };
+
+    if (token) {
+      this.http.post<void>(
+        this.apiURL + '/logout',
+        { refreshToken },
+        { headers: { Authorization: 'Bearer ' + token } }
+      ).subscribe({ next: clearLocal, error: clearLocal });
+    } else {
+      clearLocal();
+    }
+  }
+
+  revokeUserSessions(username: string) {
+    return this.http.post<void>(this.apiURL + '/admin/revoke/' + username, {});
+  }
+
+  getAllUsers() {
+    return this.http.get<AppUser[]>(this.apiURL + '/all');
   }
 
   isAdmin():Boolean{

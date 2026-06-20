@@ -27,6 +27,9 @@
         </li>
       </ul>
       <a class="dropdown-item" routerLink="/listeCategories" >Gestion des catégories</a>
+      @if(authService.isAdmin()) {
+        <a class="nav-link" routerLink="/admin/users">Sessions utilisateurs</a>
+      }
       <ul class="navbar-nav ms-auto m-2" >
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown"
