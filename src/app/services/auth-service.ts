@@ -2,8 +2,10 @@ import { Injectable } from '@angular/core';
 import {Router} from '@angular/router';
 import {HttpClient, HttpResponse} from '@angular/common/http';
 import {AppUser, User} from '../model/user.model';
+import {DashboardStats} from '../model/stats.model';
 import {JwtHelperService} from '@auth0/angular-jwt';
 import {catchError, finalize, Observable, shareReplay, tap, throwError} from 'rxjs';
+import {environment} from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
@@ -16,7 +18,7 @@ export class AuthService {
   private helper = new JwtHelperService();
   public regitredUser: User = new User();
 
-  apiURL: string = 'http://localhost:8080/users';
+  apiURL: string = environment.apiURLAuth;
   token!:string;
   private refreshTokenValue!:string;
   private refreshInProgress: Observable<HttpResponse<void>> | null = null;
@@ -146,6 +148,10 @@ export class AuthService {
 
   getAllUsers() {
     return this.http.get<AppUser[]>(this.apiURL + '/all');
+  }
+
+  getDashboardStats(): Observable<DashboardStats> {
+    return this.http.get<DashboardStats>(this.apiURL + '/api/admin/stats/dashboard');
   }
 
   isAdmin():Boolean{
