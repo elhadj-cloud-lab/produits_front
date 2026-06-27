@@ -1,8 +1,11 @@
 import { Injectable } from '@angular/core';
 import {Router} from '@angular/router';
-import {HttpClient} from '@angular/common/http';
-import {User} from '../model/user.model';
+import {HttpClient, HttpResponse} from '@angular/common/http';
+import {AppUser, User} from '../model/user.model';
+import {DashboardStats} from '../model/stats.model';
 import {JwtHelperService} from '@auth0/angular-jwt';
+import {catchError, finalize, Observable, shareReplay, tap, throwError} from 'rxjs';
+import {environment} from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
@@ -15,9 +18,10 @@ export class AuthService {
   private helper = new JwtHelperService();
   public regitredUser: User = new User();
 
-
-  apiURL: string = 'http://localhost:8080/users';
+  apiURL: string = environment.apiURLAuth;
   token!:string;
+  private refreshTokenValue!:string;
+  private refreshInProgress: Observable<HttpResponse<void>> | null = null;
 
   constructor(private router: Router,
               private http : HttpClient) { }
@@ -38,8 +42,21 @@ export class AuthService {
     return this.token;
   }
 
+  getRefreshToken(): string | null {
+    return this.refreshTokenValue ?? localStorage.getItem('refreshToken');
+  }
+
+  saveTokens(accessToken: string, refreshToken: string){
+    localStorage.setItem('jwt', accessToken);
+    localStorage.setItem('refreshToken', refreshToken);
+    this.token = accessToken;
+    this.refreshTokenValue = refreshToken;
+    this.isloggedIn = true;
+    this.decodeJWT();
+  }
+
   saveToken(jwt:string){
-    localStorage.setItem('jwt',jwt);
+    localStorage.setItem('jwt', jwt);
     this.token = jwt;
     this.isloggedIn = true;
     this.decodeJWT();
@@ -55,32 +72,99 @@ export class AuthService {
 
   loadToken() {
     const storedToken = localStorage.getItem('jwt');
+    const storedRefreshToken = localStorage.getItem('refreshToken');
     if (storedToken) {
       this.token = storedToken;
-      this.isloggedIn = true;
-      this.decodeJWT();
+      this.refreshTokenValue = storedRefreshToken ?? undefined!;
+      if (!this.isTokenExpired()) {
+        this.isloggedIn = true;
+        this.decodeJWT();
+      }
     } else {
       this.isloggedIn = false;
     }
   }
 
+  refreshAccessToken(): Observable<HttpResponse<void>> {
+    if (this.refreshInProgress) {
+      return this.refreshInProgress;
+    }
+
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) {
+      return throwError(() => new Error('No refresh token'));
+    }
+
+    this.refreshInProgress = this.http.post<void>(
+      this.apiURL + '/refresh',
+      { refreshToken },
+      { observe: 'response' }
+    ).pipe(
+      tap(response => {
+        const accessToken = response.headers.get('Authorization');
+        const newRefreshToken = response.headers.get('Refresh-Token');
+        if (accessToken && newRefreshToken) {
+          this.saveTokens(accessToken, newRefreshToken);
+        }
+      }),
+      finalize(() => {
+        this.refreshInProgress = null;
+      }),
+      shareReplay(1)
+    );
+
+    return this.refreshInProgress;
+  }
+
   logout() {
-    this.loggedUser = undefined!;
-    this.roles = undefined!;
-    this.token= undefined!;
-    this.isloggedIn = false;
-    localStorage.removeItem('jwt');
-    this.router.navigate(['/login']);
+    const refreshToken = this.getRefreshToken();
+    const token = this.getToken();
+
+    const clearLocal = () => {
+      this.loggedUser = undefined!;
+      this.roles = undefined!;
+      this.token = undefined!;
+      this.refreshTokenValue = undefined!;
+      this.isloggedIn = false;
+      localStorage.removeItem('jwt');
+      localStorage.removeItem('refreshToken');
+      this.router.navigate(['/login']);
+    };
+
+    if (token) {
+      this.http.post<void>(
+        this.apiURL + '/logout',
+        { refreshToken },
+        { headers: { Authorization: 'Bearer ' + token } }
+      ).subscribe({ next: clearLocal, error: clearLocal });
+    } else {
+      clearLocal();
+    }
+  }
+
+  revokeUserSessions(username: string) {
+    return this.http.post<void>(this.apiURL + '/admin/revoke/' + username, {});
+  }
+
+  getAllUsers() {
+    return this.http.get<AppUser[]>(this.apiURL + '/all');
+  }
+
+  getDashboardStats(): Observable<DashboardStats> {
+    return this.http.get<DashboardStats>(this.apiURL + '/api/admin/stats/dashboard');
   }
 
   isAdmin():Boolean{
-    if (!this.roles) //this.roles== undefiened
+    if (!this.roles)
       return false;
     return  (this.roles.indexOf('ADMIN') >=0);
   }
 
   isTokenExpired(): Boolean {
-    return  this.helper.isTokenExpired(this.token);
+    if (!this.token) {
+      return true;
+    }
+    return this.helper.isTokenExpired(this.token);
   }
 
   registerUser(user: User) {

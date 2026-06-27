@@ -23,7 +23,8 @@ export class Login {
     this.authService.login(this.user).subscribe({
       next: (data) => {
         let jwToken = data.headers.get('Authorization')!;
-        this.authService.saveToken(jwToken);
+        let refreshToken = data.headers.get('Refresh-Token')!;
+        this.authService.saveTokens(jwToken, refreshToken);
         this.router.navigate(['/']);
       },
       error: (err: any) => {

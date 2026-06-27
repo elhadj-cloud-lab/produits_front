@@ -1,0 +1,186 @@
+<div class="container-fluid mt-4 px-4">
+
+  <!-- En-tête -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h4 class="mb-0 fw-bold">Tableau de bord — Connexions</h4>
+      @if (lastUpdated) {
+        <small class="text-muted">Mis à jour à {{ lastUpdated | date: 'HH:mm:ss' }}</small>
+      }
+    </div>
+    <button class="btn btn-outline-secondary btn-sm" (click)="refresh()" [disabled]="loading">
+      Actualiser
+    </button>
+  </div>
+
+  <!-- Spinner -->
+  @if (loading) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+        <span class="visually-hidden">Chargement...</span>
+      </div>
+      <p class="mt-3 text-muted">Chargement des statistiques...</p>
+    </div>
+  }
+
+  @if (!loading && stats) {
+
+    <!-- KPI Cards -->
+    <div class="row g-3 mb-4">
+
+      <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <p class="text-muted small mb-1 text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: .05em;">
+              Connexions aujourd'hui
+            </p>
+            <h2 class="mb-1 fw-bold">{{ stats.totalLoginsToday }}</h2>
+            <small class="text-muted">{{ stats.totalUsers }} utilisateurs enregistrés</small>
+          </div>
+          <div class="card-footer bg-transparent border-0 pt-0">
+            <div class="progress" style="height: 4px;">
+              <div class="progress-bar bg-primary" style="width: 100%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <p class="text-muted small mb-1 text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: .05em;">
+              Connexions réussies
+            </p>
+            <h2 class="mb-1 fw-bold text-success">{{ stats.successfulLoginsToday }}</h2>
+            <small class="text-success">Authentifications acceptées</small>
+          </div>
+          <div class="card-footer bg-transparent border-0 pt-0">
+            <div class="progress" style="height: 4px;">
+              <div class="progress-bar bg-success" [style.width.%]="stats.successRateToday"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <p class="text-muted small mb-1 text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: .05em;">
+              Connexions échouées
+            </p>
+            <h2 class="mb-1 fw-bold text-danger">{{ stats.failedLoginsToday }}</h2>
+            <small class="text-danger">Tentatives rejetées</small>
+          </div>
+          <div class="card-footer bg-transparent border-0 pt-0">
+            <div class="progress" style="height: 4px;">
+              <div class="progress-bar bg-danger"
+                   [style.width.%]="stats.totalLoginsToday > 0 ? (stats.failedLoginsToday / stats.totalLoginsToday * 100) : 0">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <p class="text-muted small mb-1 text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: .05em;">
+              Taux de succès
+            </p>
+            <h2 class="mb-1 fw-bold" [class.text-success]="stats.successRateToday >= 80"
+                                     [class.text-warning]="stats.successRateToday >= 50 && stats.successRateToday < 80"
+                                     [class.text-danger]="stats.successRateToday < 50">
+              {{ stats.successRateToday }}%
+            </h2>
+            <small class="text-muted">Connexions réussies / total</small>
+          </div>
+          <div class="card-footer bg-transparent border-0 pt-0">
+            <div class="progress" style="height: 4px;">
+              <div class="progress-bar"
+                   [class.bg-success]="stats.successRateToday >= 80"
+                   [class.bg-warning]="stats.successRateToday >= 50 && stats.successRateToday < 80"
+                   [class.bg-danger]="stats.successRateToday < 50"
+                   [style.width.%]="stats.successRateToday">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Graphiques -->
+    <div class="row g-3 mb-4">
+
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-white border-bottom-0 pt-3 pb-0">
+            <h6 class="fw-semibold mb-0">Connexions par heure — aujourd'hui</h6>
+          </div>
+          <div class="card-body pt-2">
+            <canvas #hourlyChart style="max-height: 300px;"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-white border-bottom-0 pt-3 pb-0">
+            <h6 class="fw-semibold mb-0">Tendance — 7 derniers jours</h6>
+          </div>
+          <div class="card-body pt-2">
+            <canvas #dailyChart style="max-height: 300px;"></canvas>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Tableau des événements récents -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h6 class="fw-semibold mb-0">Dernières tentatives de connexion</h6>
+        <span class="badge bg-secondary rounded-pill">{{ stats.recentEvents.length }}</span>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0 small">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3 border-0">Utilisateur</th>
+                <th class="border-0">Adresse IP</th>
+                <th class="border-0">Statut</th>
+                <th class="border-0">Raison</th>
+                <th class="border-0 pe-3">Date / Heure</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (event of stats.recentEvents; track event.id) {
+                <tr>
+                  <td class="ps-3 fw-medium">{{ event.username }}</td>
+                  <td class="text-muted font-monospace">{{ event.ipAddress }}</td>
+                  <td>
+                    @if (event.success) {
+                      <span class="badge rounded-pill text-bg-success">Succès</span>
+                    } @else {
+                      <span class="badge rounded-pill text-bg-danger">Échec</span>
+                    }
+                  </td>
+                  <td class="text-muted">{{ event.failureReason ?? '—' }}</td>
+                  <td class="text-muted pe-3">{{ event.eventTime }}</td>
+                </tr>
+              }
+              @if (stats.recentEvents.length === 0) {
+                <tr>
+                  <td colspan="5" class="text-center text-muted py-4">Aucun événement enregistré</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  }
+
+</div>

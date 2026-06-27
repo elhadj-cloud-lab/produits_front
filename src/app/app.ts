@@ -23,9 +23,23 @@ export class App implements OnInit {
     ).subscribe((event: NavigationEnd) => {
       const currentUrl = event.urlAfterRedirects;
 
-      if (!publicRoutes.includes(currentUrl) &&
-        (this.authService.getToken() == null || this.authService.isTokenExpired())) {
+      if (publicRoutes.includes(currentUrl)) {
+        return;
+      }
+
+      if (this.authService.getToken() == null) {
         this.router.navigate(['/login']);
+        return;
+      }
+
+      if (this.authService.isTokenExpired()) {
+        if (this.authService.getRefreshToken()) {
+          this.authService.refreshAccessToken().subscribe({
+            error: () => this.router.navigate(['/login'])
+          });
+        } else {
+          this.router.navigate(['/login']);
+        }
       }
     });
   }

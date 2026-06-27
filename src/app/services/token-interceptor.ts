@@ -1,15 +1,16 @@
-import { HttpInterceptorFn } from '@angular/common/http';
-import {inject} from '@angular/core';
-import {AuthService} from './auth-service';
+import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { inject } from '@angular/core';
+import { AuthService } from './auth-service';
+import { catchError, switchMap, throwError } from 'rxjs';
 
+const exclude_array: string[] = ['/login', '/register', '/verifyEmail', '/refresh', '/logout'];
+const RETRY_HEADER = 'X-Retry-After-Refresh';
 
-const exclude_array : string[] = ['/login','/register','/verifyEmail'];
-function toExclude(url :string)
-{
-  var length = exclude_array.length;
-  for(var i = 0; i < length; i++) {
-    if( url.search(exclude_array[i]) != -1 )
+function toExclude(url: string) {
+  for (const path of exclude_array) {
+    if (url.includes(path)) {
       return true;
+    }
   }
   return false;
 }
@@ -17,14 +18,51 @@ function toExclude(url :string)
 export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
 
-  //tester s'il sagit de login, on n'ajoute pas le header Authorization
-  //puisqu'on a pas encode de JWT (il est null)
-  if(!toExclude(req.url)){
-    let jwt = authService.getToken();
-    let reqWithToken = req.clone( {
-      setHeaders: { Authorization : "Bearer "+jwt}
-    })
-    return next(reqWithToken);
+  if (toExclude(req.url)) {
+    return next(req);
   }
-  return next(req);
+
+  const sendWithToken = (token: string, isRetry = false) => {
+    const headers: Record<string, string> = { Authorization: 'Bearer ' + token };
+    if (isRetry) {
+      headers[RETRY_HEADER] = 'true';
+    }
+    return next(req.clone({ setHeaders: headers }));
+  };
+
+  const refreshAndRetry = () => {
+    if (!authService.getRefreshToken()) {
+      authService.logout();
+      return throwError(() => new Error('Session expirée'));
+    }
+
+    return authService.refreshAccessToken().pipe(
+      switchMap(() => sendWithToken(authService.getToken(), true)),
+      catchError(() => {
+        authService.logout();
+        return throwError(() => new Error('Session expirée'));
+      })
+    );
+  };
+
+  const with401Retry = (source: ReturnType<typeof sendWithToken>) =>
+    source.pipe(
+      catchError((err: HttpErrorResponse) => {
+        if (err.status === 401 && !req.headers.has(RETRY_HEADER) && authService.getRefreshToken()) {
+          return refreshAndRetry();
+        }
+        if (err.status === 401) {
+          authService.logout();
+        }
+        return throwError(() => err);
+      })
+    );
+
+  const token = authService.getToken();
+
+  if (token && authService.isTokenExpired() && authService.getRefreshToken()) {
+    return refreshAndRetry();
+  }
+
+  return with401Retry(sendWithToken(token));
 };
