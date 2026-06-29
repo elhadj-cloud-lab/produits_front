@@ -1,8 +1,8 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { AuthService } from '../services/auth-service';
-import { ToastrService } from 'ngx-toastr';
-import { DashboardStats } from '../model/stats.model';
+import {Component, OnInit, OnDestroy, ViewChild, ElementRef} from '@angular/core';
+import {CommonModule} from '@angular/common';
+import {AuthService} from '../services/auth-service';
+import {ToastrService} from 'ngx-toastr';
+import {DashboardStats} from '../model/stats.model';
 import {
   Chart,
   CategoryScale,
@@ -29,7 +29,7 @@ Chart.register(
   Legend,
   BarController,
   LineController,
-  Filler
+  Filler,
 );
 
 @Component({
@@ -51,7 +51,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
 
   constructor(
     private authService: AuthService,
-    private toastr: ToastrService
+    private toastr: ToastrService,
   ) {}
 
   ngOnInit(): void {
@@ -70,11 +70,14 @@ export class AdminDashboard implements OnInit, OnDestroy {
   loadStats(): void {
     this.loading = true;
     this.authService.getDashboardStats().subscribe({
-      next: (data) => {
+      next: data => {
         this.stats = data;
         this.loading = false;
         this.lastUpdated = new Date();
-        setTimeout(() => this.renderCharts(), 50);
+        setTimeout(() => {
+          this.renderHourlyChart();
+          this.renderDailyChart();
+        }, 50);
       },
       error: () => {
         this.loading = false;
@@ -83,21 +86,15 @@ export class AdminDashboard implements OnInit, OnDestroy {
     });
   }
 
-  private renderCharts(): void {
-    this.renderHourlyChart();
-    this.renderDailyChart();
-  }
-
   private renderHourlyChart(): void {
     if (!this.hourlyChartRef || !this.stats) return;
-
     this.hourlyChart?.destroy();
 
-    const hours = Array.from({ length: 24 }, (_, i) => `${i}h`);
+    const hours = Array.from({length: 24}, (_, i) => `${i}h`);
     const successData = new Array(24).fill(0);
     const failureData = new Array(24).fill(0);
 
-    this.stats.hourlyStats.forEach((s) => {
+    this.stats.hourlyStats.forEach(s => {
       successData[s.hour] = s.successes;
       failureData[s.hour] = s.failures;
     });
@@ -129,24 +126,21 @@ export class AdminDashboard implements OnInit, OnDestroy {
         responsive: true,
         maintainAspectRatio: true,
         plugins: {
-          legend: { position: 'top', labels: { usePointStyle: true } },
-          tooltip: { mode: 'index', intersect: false },
+          legend: {position: 'top', labels: {usePointStyle: true}},
+          tooltip: {mode: 'index', intersect: false},
         },
-        scales: {
-          y: { beginAtZero: true, ticks: { stepSize: 1 } },
-        },
+        scales: {y: {beginAtZero: true, ticks: {stepSize: 1}}},
       },
     });
   }
 
   private renderDailyChart(): void {
     if (!this.dailyChartRef || !this.stats) return;
-
     this.dailyChart?.destroy();
 
-    const labels = this.stats.dailyStats.map((s) => s.day);
-    const successData = this.stats.dailyStats.map((s) => s.successes);
-    const failureData = this.stats.dailyStats.map((s) => s.failures);
+    const labels = this.stats.dailyStats.map(s => s.day);
+    const successData = this.stats.dailyStats.map(s => s.successes);
+    const failureData = this.stats.dailyStats.map(s => s.failures);
 
     this.dailyChart = new Chart(this.dailyChartRef.nativeElement, {
       type: 'line',
@@ -179,12 +173,10 @@ export class AdminDashboard implements OnInit, OnDestroy {
         responsive: true,
         maintainAspectRatio: true,
         plugins: {
-          legend: { position: 'top', labels: { usePointStyle: true } },
-          tooltip: { mode: 'index', intersect: false },
+          legend: {position: 'top', labels: {usePointStyle: true}},
+          tooltip: {mode: 'index', intersect: false},
         },
-        scales: {
-          y: { beginAtZero: true, ticks: { stepSize: 1 } },
-        },
+        scales: {y: {beginAtZero: true, ticks: {stepSize: 1}}},
       },
     });
   }
