@@ -1,102 +1,101 @@
-import {Component, OnInit} from '@angular/core';
-import {Router, RouterLink} from '@angular/router';
-import {DatePipe} from '@angular/common';
+import {Component, OnInit, signal} from '@angular/core';
+import {RouterLink} from '@angular/router';
+import {CurrencyPipe, DatePipe} from '@angular/common';
 import {ProduitModel} from '../model/produit.model';
 import {ProduitService} from '../services/produit-service';
 import {AuthService} from '../services/auth-service';
-import {forkJoin, map} from 'rxjs';
+import {Categorie} from '../model/categorie.model';
+import {Image} from '../model/image.model';
 
 @Component({
   selector: 'app-produits',
-  imports: [
-    DatePipe,
-    RouterLink
-  ],
+  imports: [DatePipe, RouterLink, CurrencyPipe],
   templateUrl: './produits.html',
 })
 export class Produits implements OnInit {
+  allProduits: ProduitModel[] = [];
+  filteredProduits: ProduitModel[] = [];
+  categories: Categorie[] = [];
+  selectedCatId: number | null = null;
+  isLoading = true;
+  confirmDeleteId: number | null = null;
 
-  produits: ProduitModel[] = [];
+  // Signal : Angular traque exactement quels templates lisent imageUrls()
+  // et les rerend au moment précis où le signal change
+  readonly imageUrls = signal<Record<number, string>>({});
 
-  constructor( private produitService: ProduitService,
-               public authService: AuthService) {
-  }
+  constructor(
+    private produitService: ProduitService,
+    public authService: AuthService,
+  ) {}
 
   ngOnInit() {
     this.chargerProduits();
   }
 
-  // chargerProduits(){
-  //   this.produitService.listerProduits().subscribe(prods => {
-  //     this.produits = prods;
-  //
-  //     // Pour chaque produit, chargez ses images
-  //     this.produits.forEach((prod) => {
-  //       // Appel à l'endpoint qui fonctionne
-  //       this.produitService.getImagesByProduct(prod.idProduit).subscribe(images => {
-  //         if (images && images.length > 0) {
-  //           const img = images[0];
-  //
-  //           // Vérifiez le format de l'image
-  //           console.log('Image reçue:', img);
-  //
-  //           if (Array.isArray(img.image)) {
-  //             // Convertir le tableau de bytes
-  //             const base64 = btoa(
-  //               img.image.map(byte => String.fromCharCode(byte & 0xFF)).join('')
-  //             );
-  //             prod.imageStr = `data:${img.type};base64,${base64}`;
-  //           } else if (typeof img.image === 'string') {
-  //             prod.imageStr = `data:${img.type};base64,${img.image}`;
-  //           } else {
-  //             prod.imageStr = 'https://via.placeholder.com/100x50?text=Image';
-  //           }
-  //         } else {
-  //           prod.imageStr = 'https://via.placeholder.com/100x50?text=Pas+d\'image';
-  //         }
-  //       });
-  //     });
-  //   });
-  // }
-  chargerProduits(){
+  chargerProduits() {
+    this.isLoading = true;
+    this.imageUrls.set({});
     this.produitService.listerProduits().subscribe(prods => {
-      this.produits = prods;
+      this.allProduits = prods;
+      this.applyFilter();
+      this.isLoading = false;
 
-      // Chargez toutes les images en parallèle
-      const imageRequests = this.produits.map(prod =>
-        this.produitService.getImagesByProduct(prod.idProduit).pipe(
-          map(images => ({ prod, images }))
-        )
-      );
-
-      forkJoin(imageRequests).subscribe(results => {
-        results.forEach(({ prod, images }) => {
-          if (images && images.length > 0) {
-            const img = images[0];
-            if (Array.isArray(img.image)) {
-              const base64 = btoa(
-                img.image.map(byte => String.fromCharCode(byte & 0xFF)).join('')
-              );
-              prod.imageStr = `data:${img.type};base64,${base64}`;
-            } else if (typeof img.image === 'string') {
-              prod.imageStr = `data:${img.type};base64,${img.image}`;
-            } else {
-              prod.imageStr = 'https://via.placeholder.com/100x50?text=Image';
-            }
-          } else {
-            prod.imageStr = 'https://via.placeholder.com/100x50?text=Pas+d\'image';
-          }
-        });
+      const catMap = new Map<number, Categorie>();
+      prods.forEach(p => {
+        if (p.categorie?.idCategorie) catMap.set(p.categorie.idCategorie, p.categorie);
       });
+      this.categories = Array.from(catMap.values());
+
+      prods.forEach(prod => this.chargerImageProduit(prod));
     });
   }
 
-  supprimerProduit(produit: ProduitModel) {
-    let conf = confirm("Etes-vous sûr ?");
-    if (conf)
-      this.produitService.supprimerProduit(produit.idProduit).subscribe(() => {
-        this.chargerProduits();
-      });
+  private chargerImageProduit(prod: ProduitModel) {
+    this.produitService.getImagesByProduct(prod.idProduit).subscribe(images => {
+      if (images?.length > 0) {
+        // update() garantit une mise à jour atomique du signal
+        this.imageUrls.update(prev => ({...prev, [prod.idProduit]: this.toDataUrl(images[0])}));
+      }
+    });
   }
 
+  private toDataUrl(img: Image): string {
+    if (Array.isArray(img.image)) {
+      const base64 = btoa(img.image.map(b => String.fromCharCode(b & 0xff)).join(''));
+      return `data:${img.type};base64,${base64}`;
+    }
+    if (typeof img.image === 'string') {
+      return `data:${img.type};base64,${img.image}`;
+    }
+    return '';
+  }
+
+  filtrerParCategorie(catId: number | null) {
+    this.selectedCatId = catId;
+    this.applyFilter();
+  }
+
+  private applyFilter() {
+    this.filteredProduits =
+      this.selectedCatId === null
+        ? [...this.allProduits]
+        : this.allProduits.filter(p => p.categorie?.idCategorie == this.selectedCatId);
+  }
+
+  confirmDelete(id: number) {
+    this.confirmDeleteId = id;
+  }
+
+  cancelDelete() {
+    this.confirmDeleteId = null;
+  }
+
+  supprimerProduit(produit: ProduitModel) {
+    this.confirmDeleteId = null;
+    this.produitService.supprimerProduit(produit.idProduit).subscribe(() => {
+      this.allProduits = this.allProduits.filter(p => p.idProduit !== produit.idProduit);
+      this.applyFilter();
+    });
+  }
 }
