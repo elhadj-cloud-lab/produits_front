@@ -1,0 +1,188 @@
+<div class="container-fluid mt-4 px-4">
+
+  <!-- En-tête -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h4 class="mb-0 fw-bold">Tableau de bord — Catalogue</h4>
+      @if (lastUpdated) {
+        <small class="text-muted">Mis à jour à {{ lastUpdated | date: 'HH:mm:ss' }}</small>
+      }
+    </div>
+    <button class="btn btn-outline-secondary btn-sm" (click)="loadStats()" [disabled]="isLoading">
+      ↻ Actualiser
+    </button>
+  </div>
+
+  <!-- Loading -->
+  @if (isLoading) {
+    <div class="text-center py-5">
+      <span class="spinner-border text-primary" role="status" style="width: 2.5rem; height: 2.5rem;"></span>
+      <p class="mt-2 text-muted small">Chargement des statistiques…</p>
+    </div>
+  }
+
+  @if (!isLoading && totalProduits > 0) {
+
+    <!-- KPI -->
+    <div class="row g-3 mb-4">
+      <div class="col-sm-4">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <p class="text-muted small mb-1 text-uppercase fw-semibold"
+               style="font-size: 0.7rem; letter-spacing: .05em;">
+              Total produits
+            </p>
+            <h2 class="mb-1 fw-bold text-primary">{{ totalProduits }}</h2>
+            <small class="text-muted">dans le catalogue</small>
+          </div>
+          <div class="card-footer bg-transparent border-0 pt-0">
+            <div class="progress" style="height: 4px;">
+              <div class="progress-bar bg-primary" style="width: 100%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-4">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <p class="text-muted small mb-1 text-uppercase fw-semibold"
+               style="font-size: 0.7rem; letter-spacing: .05em;">
+              Prix moyen
+            </p>
+            <h2 class="mb-1 fw-bold text-info">
+              {{ avgPrice | currency:'EUR':'symbol':'1.2-2':'fr' }}
+            </h2>
+            <small class="text-muted">par produit</small>
+          </div>
+          <div class="card-footer bg-transparent border-0 pt-0">
+            <div class="progress" style="height: 4px;">
+              <div class="progress-bar bg-info" style="width: 100%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-4">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <p class="text-muted small mb-1 text-uppercase fw-semibold"
+               style="font-size: 0.7rem; letter-spacing: .05em;">
+              Catégories actives
+            </p>
+            <h2 class="mb-1 fw-bold text-warning">{{ nbCategories }}</h2>
+            <small class="text-muted">avec au moins un produit</small>
+          </div>
+          <div class="card-footer bg-transparent border-0 pt-0">
+            <div class="progress" style="height: 4px;">
+              <div class="progress-bar bg-warning" style="width: 100%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Graphique + Top 5 -->
+    <div class="row g-3 mb-4">
+
+      <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-white border-bottom-0 pt-3 pb-0">
+            <h6 class="fw-semibold mb-0">Répartition par catégorie</h6>
+          </div>
+          <div class="card-body d-flex align-items-center justify-content-center">
+            <canvas #categoryChart style="max-height: 300px;"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-7">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-white border-bottom-0 pt-3 pb-0">
+            <h6 class="fw-semibold mb-0">Top 5 — produits les plus chers</h6>
+          </div>
+          <div class="card-body p-0">
+            <table class="table table-hover align-middle mb-0 small">
+              <thead class="table-light">
+                <tr>
+                  <th class="ps-3 border-0">#</th>
+                  <th class="border-0">Produit</th>
+                  <th class="border-0">Catégorie</th>
+                  <th class="border-0 pe-3 text-end">Prix</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (prod of topProduits; track prod.idProduit; let i = $index) {
+                  <tr>
+                    <td class="ps-3 text-muted fw-medium">{{ i + 1 }}</td>
+                    <td class="fw-medium">{{ prod.nomProduit }}</td>
+                    <td>
+                      @if (prod.categorie?.nomCategorie) {
+                        <span class="badge rounded-pill text-bg-light border text-dark">
+                          {{ prod.categorie!.nomCategorie }}
+                        </span>
+                      } @else {
+                        <span class="text-muted">—</span>
+                      }
+                    </td>
+                    <td class="pe-3 text-end fw-semibold text-success">
+                      {{ prod.prixProduit | currency:'EUR':'symbol':'1.2-2':'fr' }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Détail par catégorie -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header bg-white">
+        <h6 class="fw-semibold mb-0">Détail par catégorie</h6>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-hover align-middle mb-0 small">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3 border-0">Catégorie</th>
+              <th class="border-0">Produits</th>
+              <th class="border-0 pe-3">Répartition</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (stat of prodCategStats; track stat.label) {
+              <tr>
+                <td class="ps-3 fw-medium">{{ stat.label }}</td>
+                <td>{{ stat.count }}</td>
+                <td class="pe-3" style="min-width: 180px;">
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="progress flex-grow-1" style="height: 6px;">
+                      <div class="progress-bar bg-primary"
+                           [style.width.%]="(stat.count / totalProduits) * 100">
+                      </div>
+                    </div>
+                    <span class="text-muted small">
+                      {{ (stat.count / totalProduits * 100) | number:'1.0-0' }}%
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  }
+
+  @if (!isLoading && totalProduits === 0) {
+    <div class="text-center text-muted py-5">
+      <div class="mb-2" style="font-size: 3rem;">📦</div>
+      <h5>Aucun produit dans le catalogue</h5>
+    </div>
+  }
+
+</div>
