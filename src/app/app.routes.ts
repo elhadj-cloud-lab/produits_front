@@ -12,6 +12,7 @@ import {Register} from './register/register';
 import {VerifEmail} from './verif-email/verif-email';
 import {AdminUsers} from './admin-users/admin-users';
 import {AdminDashboard} from './admin-dashboard/admin-dashboard';
+import {AdminProduitDashboard} from './admin-produit-dashboard/admin-produit-dashboard';
 
 export const routes: Routes = [
   {path: "produits", component: Produits },
@@ -27,4 +28,5 @@ export const routes: Routes = [
   {path: "listeCategories", component : ListeCategories},
   {path: "admin/users", component: AdminUsers, canActivate: [produitGuard]},
   {path: "admin/dashboard", component: AdminDashboard, canActivate: [produitGuard]},
+  {path: "admin/produit-dashboard", component: AdminProduitDashboard, canActivate: [produitGuard]},
 ];

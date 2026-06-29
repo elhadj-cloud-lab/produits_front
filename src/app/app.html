@@ -28,7 +28,8 @@
       </ul>
       <a class="dropdown-item" routerLink="/listeCategories" >Gestion des catégories</a>
       @if(authService.isAdmin()) {
-        <a class="nav-link" routerLink="/admin/dashboard">Tableau de bord</a>
+        <a class="nav-link" routerLink="/admin/dashboard">Dashboard Connexions</a>
+        <a class="nav-link" routerLink="/admin/produit-dashboard">Dashboard Catalogue</a>
         <a class="nav-link" routerLink="/admin/users">Sessions utilisateurs</a>
       }
       <ul class="navbar-nav ms-auto m-2" >
