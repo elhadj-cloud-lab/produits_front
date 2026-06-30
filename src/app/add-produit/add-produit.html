@@ -1,48 +1,130 @@
-<div class="container">
-  <div>
-    <h2>Ajouter un Produit :</h2>
-  </div>
-  <form >
-    <div hidden class="col-sm-2 col-md-2 col-lg-2">
-      <label >ID Produit</label>
-      <input type="text" [(ngModel)]="newProduit.idProduit"
-             name="idProduit" class="form-control">
-    </div>
-    <div class="col-sm-4 col-md-4 col-lg-4" >
-      <label >Nom Produit</label>
-      <input type="text"[(ngModel)]= "newProduit.nomProduit"
-             name="nomProduit" class="form-control">
-    </div>
-    <div class="col-sm-2 col-md-2 col-lg-2">
-      <label >Prix Produit</label>
-      <input type="number" [(ngModel)]= "newProduit.prixProduit"
-             name="prixProduit" class="form-control">
-    </div>
-    <div class="col-sm-4 col-md-4 col-lg-4">
-      <label >Date création</label>
-      <input type="date" [(ngModel)]= "newProduit.dateCreation"
-             name="dateCreation" class="form-control">
-    </div>
-    <div class="col-sm-4 col-md-4 col-lg-4">
-      <label>Categorie</label>
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow-sm border-0 rounded-4">
 
-      <select class="form-control form-control-lg" id="idCat" name="idCat" [(ngModel)]="newIdCat">
-        @for(cat of categories; track cat.idCategorie){
-          <option  [value]="cat.idCategorie">  {{cat.nomCategorie}}
-          </option>
-        }
-      </select>
+        <div class="card-header bg-white border-bottom py-3 px-4 rounded-top-4">
+          <h4 class="mb-0 fw-semibold text-dark">Nouveau produit</h4>
+        </div>
+
+        <div class="card-body p-4">
+
+          @if (errorMessage) {
+            <div class="alert alert-danger d-flex align-items-center gap-2 rounded-3 mb-4">
+              <span>⚠</span>
+              <span class="flex-grow-1">{{ errorMessage }}</span>
+              <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+            </div>
+          }
+
+          <form (ngSubmit)="addProduit()">
+
+            <!-- Champs produit -->
+            <div class="row g-3 mb-4">
+              <div class="col-12">
+                <label class="form-label fw-medium">
+                  Nom du produit <span class="text-danger">*</span>
+                </label>
+                <input type="text" [(ngModel)]="newProduit.nomProduit" name="nomProduit"
+                       class="form-control form-control-lg"
+                       placeholder="Ex: Laptop Dell XPS 15">
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label fw-medium">
+                  Prix <span class="text-danger">*</span>
+                </label>
+                <div class="input-group">
+                  <span class="input-group-text">€</span>
+                  <input type="number" [(ngModel)]="newProduit.prixProduit" name="prixProduit"
+                         class="form-control" placeholder="0.00" min="0" step="0.01">
+                </div>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label fw-medium">Date de création</label>
+                <input type="date" [(ngModel)]="newProduit.dateCreation" name="dateCreation"
+                       class="form-control">
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label fw-medium">
+                  Catégorie <span class="text-danger">*</span>
+                </label>
+                <select class="form-select" [(ngModel)]="newIdCat" name="idCat">
+                  <option [value]="undefined" disabled selected>Choisir…</option>
+                  @for (cat of categories; track cat.idCategorie) {
+                    <option [value]="cat.idCategorie">{{ cat.nomCategorie }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            <!-- Zone d'upload image -->
+            <div class="mb-4">
+              <label class="form-label fw-medium">
+                Image <span class="text-muted fw-normal small">(optionnel)</span>
+              </label>
+
+              @if (!imagePath) {
+                <div class="rounded-3 p-5 text-center"
+                     [style.border]="isDragging ? '2px dashed #0d6efd' : '2px dashed #dee2e6'"
+                     [style.background]="isDragging ? '#f0f7ff' : '#fafafa'"
+                     style="cursor: pointer; transition: all 0.2s;"
+                     (dragover)="onDragOver($event)"
+                     (dragleave)="onDragLeave()"
+                     (drop)="onDrop($event)"
+                     (click)="fileInput.click()">
+                  <div class="text-muted py-2">
+                    <div style="font-size: 2.5rem;" class="mb-2">📷</div>
+                    <p class="mb-1 fw-medium">Glisser une image ici</p>
+                    <p class="small mb-2 text-secondary">ou cliquer pour parcourir</p>
+                    <span class="badge bg-light text-secondary border">JPG · PNG · WEBP</span>
+                  </div>
+                </div>
+              } @else {
+                <div class="position-relative rounded-3 overflow-hidden">
+                  <img [src]="imagePath" alt="Aperçu"
+                       class="img-fluid w-100 rounded-3"
+                       style="max-height: 280px; object-fit: cover;">
+                  <div class="position-absolute top-0 end-0 p-2">
+                    <button type="button"
+                            class="btn btn-sm btn-danger rounded-pill shadow-sm"
+                            (click)="removeImage()">
+                      ✕ Retirer
+                    </button>
+                  </div>
+                  <div class="position-absolute bottom-0 start-0 p-2">
+                    <span class="badge bg-dark bg-opacity-75 rounded-pill">
+                      {{ uploadedImage?.name }}
+                    </span>
+                  </div>
+                </div>
+              }
+
+              <input #fileInput type="file" accept="image/*" class="d-none"
+                     (change)="onImageUpload($event)">
+            </div>
+
+            <!-- Actions -->
+            <div class="d-flex gap-2 pt-3 border-top">
+              <button type="submit" class="btn btn-success px-4" [disabled]="isLoading">
+                @if (isLoading) {
+                  <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                  Enregistrement…
+                } @else {
+                  Enregistrer le produit
+                }
+              </button>
+              <button type="button" class="btn btn-outline-secondary px-4"
+                      [disabled]="isLoading" (click)="cancel()">
+                Annuler
+              </button>
+            </div>
+
+          </form>
+        </div>
+      </div>
     </div>
-    <div class="col-sm-16 col-md-16 col-lg-16">
-      <label class="mb-2">Image :</label>
-      <input type="file" (change)="onImageUpload($event)" class="form-control">
-    </div>
-    <div class="col-sm-16 col-md-16 col-lg-16">
-      <img [src]="imagePath" class="card-img-top img-fluid rounded-start"
-           style="width: 500px; height: 300px" />
-    </div>
-    <div class="mt-2">
-      <button type="submit" (click)="addProduit()"class="btn btn-success">Ajouter</button>
-    </div>
-  </form>
+  </div>
 </div>

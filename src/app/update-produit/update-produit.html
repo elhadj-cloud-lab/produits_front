@@ -1,81 +1,145 @@
-<div class="container">
-  <div>
-    <h2>Modifier un Produit :</h2>
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-9">
+      <div class="card shadow-sm border-0 rounded-4">
+
+        <div class="card-header bg-white border-bottom py-3 px-4 rounded-top-4">
+          <h4 class="mb-0 fw-semibold text-dark">
+            Modifier le produit
+            <span class="text-secondary fw-normal small ms-2">#{{ currentProduit.idProduit }}</span>
+          </h4>
+        </div>
+
+        <div class="card-body p-4">
+
+          <!-- Informations produit -->
+          <form>
+            <div class="row g-3 mb-3">
+              <div class="col-12">
+                <label class="form-label fw-medium">Nom du produit</label>
+                <input type="text" [(ngModel)]="currentProduit.nomProduit" name="nomProduit"
+                       class="form-control form-control-lg">
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label fw-medium">Prix (€)</label>
+                <div class="input-group">
+                  <span class="input-group-text">€</span>
+                  <input type="number" [(ngModel)]="currentProduit.prixProduit" name="prixProduit"
+                         class="form-control" min="0" step="0.01">
+                </div>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label fw-medium">Date de création</label>
+                <input type="date"
+                       [ngModel]="currentProduit.dateCreation | date: 'yyyy-MM-dd'"
+                       (ngModelChange)="currentProduit.dateCreation = $event"
+                       name="dateCreation" class="form-control">
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label fw-medium">Catégorie</label>
+                <select class="form-select" [(ngModel)]="updatedCatId" name="idCat">
+                  @for (cat of categories; track cat.idCategorie) {
+                    <option [value]="cat.idCategorie">{{ cat.nomCategorie }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            @if (authService.isAdmin()) {
+              <div class="d-flex gap-2 pb-4 border-bottom mb-4">
+                <button type="button" (click)="updateProduit()" class="btn btn-success px-4"
+                        [disabled]="isLoading">
+                  @if (isLoading) {
+                    <span class="spinner-border spinner-border-sm me-2"></span>Enregistrement…
+                  } @else {
+                    Enregistrer les modifications
+                  }
+                </button>
+                <button type="button" class="btn btn-outline-secondary px-4"
+                        (click)="router.navigate(['produits'])">
+                  Annuler
+                </button>
+              </div>
+            }
+          </form>
+
+          <!-- Section images -->
+          <div>
+            <h5 class="fw-semibold mb-3">Images du produit</h5>
+
+            <!-- Image principale -->
+            <div class="mb-3 rounded-3 overflow-hidden border bg-light"
+                 style="height: 260px;">
+              <img [src]="mainImageSrc" alt="Image principale"
+                   class="w-100 h-100" style="object-fit: cover;">
+            </div>
+
+            <!-- Upload nouvelle image -->
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-4 p-3 bg-light rounded-3">
+              <input type="file" accept="image/*" class="form-control"
+                     style="max-width: 320px;"
+                     (change)="onImageUpload($event)">
+              <button type="button" class="btn btn-outline-primary"
+                      (click)="onAddImageProduit()"
+                      [disabled]="!uploadedImage || isUploadingImage">
+                @if (isUploadingImage) {
+                  <span class="spinner-border spinner-border-sm me-1"></span>Upload…
+                } @else {
+                  + Ajouter l'image
+                }
+              </button>
+              @if (uploadedImage) {
+                <span class="badge bg-secondary">{{ uploadedImage.name }}</span>
+              }
+            </div>
+
+            <!-- Galerie images existantes -->
+            @if (currentProduit.images.length > 0) {
+              <div class="row g-3">
+                @for (img of currentProduit.images; track img.idImage) {
+                  <div class="col-6 col-sm-4 col-md-3">
+                    <div class="card border-0 shadow-sm rounded-3 overflow-hidden h-100">
+                      <div style="height: 110px; cursor: pointer;"
+                           (click)="selectMainImage(img)">
+                        <img [src]="getImageUrl(img)" alt="Image produit"
+                             class="w-100 h-100" style="object-fit: cover;">
+                      </div>
+                      <div class="card-body p-2">
+                        @if (confirmDeleteId === img.idImage) {
+                          <div class="d-flex gap-1">
+                            <button class="btn btn-danger btn-sm flex-grow-1"
+                                    (click)="supprimerImage(img)">
+                              Confirmer
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm"
+                                    (click)="cancelDelete()">
+                              ✕
+                            </button>
+                          </div>
+                        } @else {
+                          <button class="btn btn-outline-danger btn-sm w-100"
+                                  (click)="confirmDelete(img.idImage)">
+                            Supprimer
+                          </button>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="text-center text-muted py-4 border rounded-3 bg-light">
+                <div class="mb-1" style="font-size: 1.8rem;">🖼</div>
+                <small>Aucune image associée à ce produit.</small>
+              </div>
+            }
+          </div>
+
+        </div>
+      </div>
+    </div>
   </div>
-  <form >
-    <div class="col-sm-2 col-md-2 col-lg-2">
-      <label >ID Produit</label>
-      <input readonly type="text" [(ngModel)]="currentProduit.idProduit"
-             name="idProduit" class="form-control">
-    </div>
-    <div class="col-sm-4 col-md-4 col-lg-4" >
-      <label >Nom Produit</label>
-      <input type="text"[(ngModel)]= "currentProduit.nomProduit"
-             name="nomProduit" class="form-control">
-    </div>
-    <div class="col-sm-2 col-md-2 col-lg-2">
-      <label >Prix Produit</label>
-      <input type="number" [(ngModel)]= "currentProduit.prixProduit"
-             name="prixProduit" class="form-control">
-    </div>
-    <div class="col-sm-4 col-md-4 col-lg-4">
-      <label >Date création</label>
-      <input type="date" [ngModel]="currentProduit.dateCreation | date: 'yyyy-MM-dd'"
-             (ngModelChange)=" currentProduit.dateCreation= $event" name="dateCreation"
-             class="form-control">
-    </div>
-    <div class="col-sm-4 col-md-4 col-lg-4">
-      <label>Categorie</label>
-      <select class="form-control form-control-lg" id="idCat" name="idCat"
-              [(ngModel)]="updatedCatId">
-        @for(cat of categories; track cat.idCategorie)
-        {
-          <option [value]="cat.idCategorie"> {{cat.nomCategorie}} </option>
-        }
-      </select>
-    </div>
-    <div class="col-sm-16 col-md-16 col-lg-16">
-      <img [src]="myImage" class="card-img-top img-fluid rounded-start"  style="width: 500px; height: 300px" />
-    </div>
-
-    <div class="col-sm-16 col-md-16 col-lg-16">
-      <label class="mb-2">Image :</label>
-      <input type="file" (change)="onImageUpload($event)" class="form-control">
-    </div>
-
-    <div class="mt-2">
-      <button type="submit" (click)="onAddImageProduit()" class="btn btn-success">Ajouter Image</button>
-    </div>
-
-    <div class="card shadow mb-4">
-      <div class="card-body">
-        <table class="table table-striped">
-          <thead>
-          <tr>
-            <th>Images</th>
-          </tr>
-          </thead>
-          @for(img of currentProduit.images; track img.idImage)
-          {
-            <tbody>
-            <tr>
-              <td>
-                <img [src]="getImageUrl(img)" style="height:50px;width:100px">
-              </td>
-              <td style="width:20%">
-                <a class="btn btn-danger" (click)="supprimerImage(img)">Supprimer</a>
-              </td>
-            </tr>
-            </tbody>
-          }
-        </table>
-      </div>
-    </div>
-
-    @if(authService.isAdmin()) {
-      <div class="mt-2">
-        <button type="submit" (click)="updateProduit()" class="btn btn-success">Modifer</button>
-      </div>
-    }
-  </form>
 </div>

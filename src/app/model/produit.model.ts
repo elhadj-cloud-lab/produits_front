@@ -7,6 +7,6 @@ export class ProduitModel {
   prixProduit!: number;
   dateCreation!: Date;
   categorie?: Categorie;
-  imageStr!: string;
-  images!: Image[];
+  imageStr = '';
+  images: Image[] = [];
 }

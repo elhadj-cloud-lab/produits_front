@@ -86,7 +86,7 @@ export class ProduitService {
   uploadImageProd(file: File, filename: string, idProd: number): Observable<any> {
     const imageFormData = new FormData();
     imageFormData.append('image', file, filename);
-    const url = `${environment.apiURLImage + '/uplaodImageProd'}/${idProd}`;
+    const url = `${environment.apiURLImage + '/uploadImageProd'}/${idProd}`;
     return this.http.post(url, imageFormData);
   }
 

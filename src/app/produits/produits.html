@@ -1,39 +1,133 @@
-<div class="container">
-  <div class="card shadow mb-4">
-    <div class="card-body">
-      <h2>Liste des produits</h2>
-      <table class="table table-striped">
-        @if(produits.length!=0){
-          <tr> <th>N°</th><th>Id</th><th>Nom</th> <th>Prix</th> <th>Date Création</th> <th>Catégorie</th> <th>Image</th> </tr>
-        }
-        @for (produit of produits; track produit.idProduit; let index=$index; let nbr=$count; let last=$last)
-        {
-          <tbody >
-            <tr >
-              <td>{{index+1}}</td>
-              <td>{{produit.idProduit}}</td>
-              <td>{{produit.nomProduit}}</td>
-              <td>{{produit.prixProduit}}</td>
-              <td>{{produit.dateCreation | date:'dd/MM/yyyy'}}</td>
-              <td>{{produit.categorie?.nomCategorie}}</td>
-              <td>
-                <img class="card-img-top img-responsive"
-                     src = "{{produit.imageStr}}"
-                     style="height:50px;width:100px">
-              </td>
-              @if(authService.isAdmin()) {
-                <td><a class="btn btn-danger" (click)="supprimerProduit(produit)">Supprimer</a></td>
-                <td><a class="btn btn-success" [routerLink]="['/updateProduit',produit.idProduit]">Modifier</a></td>
-              }
-            </tr>
-          </tbody>
-          @if(last){
-            <h3>Nombre : {{nbr}}</h3>
-          }
-        } @empty {
-          <h1>Aucun produit trouvé</h1>
-        }
-      </table>
+<div class="container py-4">
+
+  <!-- En-tête -->
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h4 class="fw-semibold mb-0">Catalogue produits</h4>
+      @if (!isLoading) {
+        <small class="text-secondary">
+          {{ filteredProduits.length }} / {{ allProduits.length }} produit(s)
+        </small>
+      }
     </div>
+    @if (authService.isAdmin()) {
+      <a class="btn btn-success rounded-pill px-4" routerLink="/add-produit">
+        + Nouveau produit
+      </a>
+    }
   </div>
+
+  <!-- Chips filtre catégorie -->
+  @if (categories.length > 1) {
+    <div class="d-flex flex-wrap gap-2 mb-4">
+      <button class="btn btn-sm rounded-pill"
+              [class.btn-dark]="selectedCatId === null"
+              [class.btn-outline-secondary]="selectedCatId !== null"
+              (click)="filtrerParCategorie(null)">
+        Toutes
+      </button>
+      @for (cat of categories; track cat.idCategorie) {
+        <button class="btn btn-sm rounded-pill"
+                [class.btn-primary]="selectedCatId === cat.idCategorie"
+                [class.btn-outline-primary]="selectedCatId !== cat.idCategorie"
+                (click)="filtrerParCategorie(cat.idCategorie!)">
+          {{ cat.nomCategorie }}
+        </button>
+      }
+    </div>
+  }
+
+  <!-- Loading -->
+  @if (isLoading) {
+    <div class="text-center py-5 text-muted">
+      <span class="spinner-border text-primary me-2" role="status"></span>
+      Chargement des produits…
+    </div>
+  }
+
+  <!-- Vide -->
+  @if (!isLoading && filteredProduits.length === 0) {
+    <div class="text-center py-5">
+      <div style="font-size: 3rem;" class="mb-3">📦</div>
+      <h5 class="text-muted">Aucun produit trouvé</h5>
+      @if (selectedCatId !== null) {
+        <button class="btn btn-outline-secondary btn-sm mt-2"
+                (click)="filtrerParCategorie(null)">
+          Voir tous les produits
+        </button>
+      }
+    </div>
+  }
+
+  <!-- Grille de produits -->
+  @if (!isLoading && filteredProduits.length > 0) {
+    <div class="row g-4">
+      @for (produit of filteredProduits; track produit.idProduit) {
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+          <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden">
+
+            <!-- Image -->
+            <div class="position-relative bg-light" style="height: 180px;">
+              @let imgSrc = imageUrls()[produit.idProduit];
+              @if (imgSrc) {
+                <img [src]="imgSrc" [alt]="produit.nomProduit"
+                     class="w-100 h-100" style="object-fit: cover;">
+              } @else {
+                <div class="w-100 h-100 d-flex align-items-center justify-content-center text-secondary">
+                  <span style="font-size: 2.5rem;">🖼</span>
+                </div>
+              }
+              @if (produit.categorie?.nomCategorie) {
+                <span class="badge bg-dark bg-opacity-75 position-absolute bottom-0 start-0 m-2 rounded-pill small">
+                  {{ produit.categorie!.nomCategorie }}
+                </span>
+              }
+            </div>
+
+            <!-- Infos -->
+            <div class="card-body p-3 d-flex flex-column">
+              <h6 class="fw-semibold mb-1 text-truncate" [title]="produit.nomProduit">
+                {{ produit.nomProduit }}
+              </h6>
+              <p class="fs-5 fw-bold text-success mb-1">
+                {{ produit.prixProduit | currency:'EUR':'symbol':'1.2-2':'fr' }}
+              </p>
+              <p class="text-muted small mb-0">
+                {{ produit.dateCreation | date:'dd/MM/yyyy' }}
+              </p>
+
+              @if (authService.isAdmin()) {
+                <div class="mt-auto pt-3">
+                  @if (confirmDeleteId === produit.idProduit) {
+                    <div class="d-flex gap-1">
+                      <button class="btn btn-danger btn-sm flex-grow-1"
+                              (click)="supprimerProduit(produit)">
+                        Confirmer
+                      </button>
+                      <button class="btn btn-outline-secondary btn-sm"
+                              (click)="cancelDelete()">✕</button>
+                    </div>
+                  } @else {
+                    <div class="d-flex gap-2">
+                      <a class="btn btn-outline-primary btn-sm flex-grow-1"
+                         [routerLink]="['/updateProduit', produit.idProduit]">
+                        Modifier
+                      </a>
+                      <button class="btn btn-outline-danger btn-sm"
+                              title="Supprimer"
+                              (click)="confirmDelete(produit.idProduit)">
+                        🗑
+                      </button>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+
+          </div>
+        </div>
+      }
+    </div>
+  }
+
 </div>
