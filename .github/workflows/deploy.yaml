@@ -64,8 +64,17 @@ jobs:
       - name: Lint
         run: npm run lint --if-present
 
-      - name: Run tests
-        run: npm test -- --watch=false
+      - name: Run tests with coverage
+        run: npm run test:coverage -- --watch=false
+
+      - name: SonarCloud Analysis (PR)
+        uses: SonarSource/sonarcloud-github-action@v4
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
+            -Dsonar.qualitygate.wait=false
 
       - name: Build
         run: npm run build -- --configuration production
@@ -77,7 +86,7 @@ jobs:
           name: test-reports
           path: |
             dist/
-            coverage/  # Vitest génère coverage/
+            coverage/
             test-results/
 
       - name: Set up Docker Buildx
@@ -121,10 +130,27 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Run tests with coverage
+        run: npm run test:coverage -- --watch=false
+
+      - name: SonarCloud Analysis (DEV)
+        uses: SonarSource/sonarcloud-github-action@v4
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
+            -Dsonar.qualitygate.wait=false
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-dev
+          path: coverage/
+
       - name: Build
         run: npm run build -- --configuration production
-      - name: Test
-        run: npm test -- --watch=false
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -174,10 +200,27 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Run tests with coverage
+        run: npm run test:coverage -- --watch=false
+
+      - name: SonarCloud Analysis (PROD)
+        uses: SonarSource/sonarcloud-github-action@v4
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
+            -Dsonar.qualitygate.wait=false
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-prod
+          path: coverage/
+
       - name: Build
         run: npm run build -- --configuration production
-      - name: Test
-        run: npm test -- --watch=false
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
