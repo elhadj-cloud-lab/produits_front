@@ -68,7 +68,7 @@ jobs:
         run: npm run test:coverage -- --watch=false
 
       - name: SonarCloud Analysis (PR)
-        uses: SonarSource/sonarcloud-github-action@v4
+        uses: SonarSource/sonarqube-scan-action@v8.2.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
@@ -134,7 +134,7 @@ jobs:
         run: npm run test:coverage -- --watch=false
 
       - name: SonarCloud Analysis (DEV)
-        uses: SonarSource/sonarcloud-github-action@v4
+        uses: SonarSource/sonarqube-scan-action@v8.2.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
@@ -204,7 +204,7 @@ jobs:
         run: npm run test:coverage -- --watch=false
 
       - name: SonarCloud Analysis (PROD)
-        uses: SonarSource/sonarcloud-github-action@v4
+        uses: SonarSource/sonarqube-scan-action@v8.2.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
