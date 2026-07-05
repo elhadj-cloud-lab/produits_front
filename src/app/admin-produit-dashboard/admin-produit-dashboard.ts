@@ -1,4 +1,4 @@
-import {Component, DestroyRef, inject, OnInit, OnDestroy, ViewChild, ElementRef} from '@angular/core';
+import {AfterViewChecked, Component, DestroyRef, ElementRef, inject, OnDestroy, OnInit, signal, ViewChild} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {CommonModule, CurrencyPipe} from '@angular/common';
 import {ProduitService} from '../services/produit-service';
@@ -18,7 +18,7 @@ Chart.register(ArcElement, Tooltip, Legend, DoughnutController);
   imports: [CommonModule, CurrencyPipe],
   templateUrl: './admin-produit-dashboard.html',
 })
-export class AdminProduitDashboard implements OnInit, OnDestroy {
+export class AdminProduitDashboard implements OnInit, OnDestroy, AfterViewChecked {
   @ViewChild('categoryChart') categoryChartRef!: ElementRef<HTMLCanvasElement>;
 
   stats: ProduitStats | null = null;
@@ -28,6 +28,7 @@ export class AdminProduitDashboard implements OnInit, OnDestroy {
   private categoryChart: Chart | null = null;
 
   private readonly destroyRef = inject(DestroyRef);
+  private readonly chartRenderPending = signal(false);
 
   constructor(private produitService: ProduitService) {}
 
@@ -39,6 +40,17 @@ export class AdminProduitDashboard implements OnInit, OnDestroy {
     this.categoryChart?.destroy();
   }
 
+  ngAfterViewChecked(): void {
+    if (!this.chartRenderPending() || !this.stats?.prodCategStats.length) {
+      return;
+    }
+    if (!this.categoryChartRef?.nativeElement) {
+      return;
+    }
+    this.chartRenderPending.set(false);
+    this.renderCategoryChart();
+  }
+
   loadStats(): void {
     this.isLoading = true;
     this.produitService.listerProduits().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
@@ -46,7 +58,7 @@ export class AdminProduitDashboard implements OnInit, OnDestroy {
         this.stats = this.produitService.computeStats(prods);
         this.isLoading = false;
         this.lastUpdated = new Date();
-        setTimeout(() => this.renderCategoryChart(), 50);
+        this.chartRenderPending.set(true);
       },
       error: () => (this.isLoading = false),
     });

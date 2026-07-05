@@ -1,4 +1,4 @@
-import {Component, DestroyRef, inject, OnInit, OnDestroy, ViewChild, ElementRef} from '@angular/core';
+import {AfterViewChecked, Component, DestroyRef, ElementRef, inject, OnDestroy, OnInit, signal, ViewChild} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {CommonModule} from '@angular/common';
 import {AuthService} from '../services/auth-service';
@@ -39,7 +39,7 @@ Chart.register(
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.css',
 })
-export class AdminDashboard implements OnInit, OnDestroy {
+export class AdminDashboard implements OnInit, OnDestroy, AfterViewChecked {
   @ViewChild('hourlyChart') hourlyChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('dailyChart') dailyChartRef!: ElementRef<HTMLCanvasElement>;
 
@@ -51,6 +51,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
   private dailyChart: Chart | null = null;
 
   private readonly destroyRef = inject(DestroyRef);
+  private readonly chartsRenderPending = signal(false);
 
   constructor(
     private authService: AuthService,
@@ -66,6 +67,18 @@ export class AdminDashboard implements OnInit, OnDestroy {
     this.dailyChart?.destroy();
   }
 
+  ngAfterViewChecked(): void {
+    if (!this.chartsRenderPending() || !this.stats) {
+      return;
+    }
+    if (!this.hourlyChartRef?.nativeElement || !this.dailyChartRef?.nativeElement) {
+      return;
+    }
+    this.chartsRenderPending.set(false);
+    this.renderHourlyChart();
+    this.renderDailyChart();
+  }
+
   refresh(): void {
     this.loadStats();
   }
@@ -77,10 +90,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
         this.stats = data;
         this.loading = false;
         this.lastUpdated = new Date();
-        setTimeout(() => {
-          this.renderHourlyChart();
-          this.renderDailyChart();
-        }, 50);
+        this.chartsRenderPending.set(true);
       },
       error: () => {
         this.loading = false;

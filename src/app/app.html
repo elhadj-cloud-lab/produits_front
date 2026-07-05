@@ -21,12 +21,14 @@
               <li><a class="dropdown-item" [routerLink]="['/add-produit']">Ajouter</a><li>
             }
             <li><a class="dropdown-item" href="#">Lister</a></li>
-            <li><a class="dropdown-item" [routerLink]="['/rechercheParCategorie']">Recherche Par Catégorie</a></li>
-            <li><a class="dropdown-item" routerLink="/rechercheParNom" >Recherche Par Nom</a></li>
+            <li><a class="dropdown-item" [routerLink]="['/recherche-par-categorie']">Recherche Par Catégorie</a></li>
+            <li><a class="dropdown-item" routerLink="/recherche-par-nom">Recherche Par Nom</a></li>
           </ul>
         </li>
       </ul>
-      <a class="dropdown-item" routerLink="/listeCategories" >Gestion des catégories</a>
+      @if (authService.isAdmin()) {
+        <a class="dropdown-item" routerLink="/liste-categories">Gestion des catégories</a>
+      }
       @if(authService.isAdmin()) {
         <a class="nav-link" routerLink="/admin/dashboard">Dashboard Connexions</a>
         <a class="nav-link" routerLink="/admin/produit-dashboard">Dashboard Catalogue</a>

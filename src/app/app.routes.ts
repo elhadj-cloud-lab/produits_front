@@ -7,6 +7,7 @@ import {RechercheParNom} from './recherche-par-nom/recherche-par-nom';
 import {ListeCategories} from './liste-categories/liste-categories';
 import {Login} from './login/login';
 import {Forbidden} from './forbidden/forbidden';
+import {authGuard} from './auth-guard';
 import {adminGuard} from './produit-guard';
 import {Register} from './register/register';
 import {VerifEmail} from './verif-email/verif-email';
@@ -15,18 +16,18 @@ import {AdminDashboard} from './admin-dashboard/admin-dashboard';
 import {AdminProduitDashboard} from './admin-produit-dashboard/admin-produit-dashboard';
 
 export const routes: Routes = [
-  {path: "produits", component: Produits },
-  {path: "add-produit", component: AddProduit, canActivate:[adminGuard] },
-  {path: "updateProduit/:id", component: UpdateProduit, canActivate: [adminGuard]},
-  {path: "", redirectTo: "produits", pathMatch: "full"},
-  {path: "rechercheParCategorie", component : RechercheParCategorie},
-  {path: "rechercheParNom", component : RechercheParNom},
-  {path: 'login', component : Login},
+  {path: 'produits', component: Produits, canActivate: [authGuard]},
+  {path: 'add-produit', component: AddProduit, canActivate: [authGuard, adminGuard]},
+  {path: 'update-produit/:id', component: UpdateProduit, canActivate: [authGuard, adminGuard]},
+  {path: '', redirectTo: 'produits', pathMatch: 'full'},
+  {path: 'recherche-par-categorie', component: RechercheParCategorie, canActivate: [authGuard]},
+  {path: 'recherche-par-nom', component: RechercheParNom, canActivate: [authGuard]},
+  {path: 'login', component: Login},
   {path: 'app-forbidden', component: Forbidden},
-  {path:'register',component: Register},
-  { path: 'verifEmail', component: VerifEmail },
-  {path: "listeCategories", component : ListeCategories, canActivate: [adminGuard]},
-  {path: "admin/users", component: AdminUsers, canActivate: [adminGuard]},
-  {path: "admin/dashboard", component: AdminDashboard, canActivate: [adminGuard]},
-  {path: "admin/produit-dashboard", component: AdminProduitDashboard, canActivate: [adminGuard]},
+  {path: 'register', component: Register},
+  {path: 'verif-email', component: VerifEmail},
+  {path: 'liste-categories', component: ListeCategories, canActivate: [authGuard, adminGuard]},
+  {path: 'admin/users', component: AdminUsers, canActivate: [authGuard, adminGuard]},
+  {path: 'admin/dashboard', component: AdminDashboard, canActivate: [authGuard, adminGuard]},
+  {path: 'admin/produit-dashboard', component: AdminProduitDashboard, canActivate: [authGuard, adminGuard]},
 ];

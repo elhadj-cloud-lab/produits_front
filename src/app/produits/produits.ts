@@ -74,7 +74,7 @@ export class Produits implements OnInit {
     this.filteredProduits =
       this.selectedCatId === null
         ? [...this.allProduits]
-        : this.allProduits.filter(p => p.categorie?.idCategorie == this.selectedCatId);
+        : this.allProduits.filter(p => p.categorie?.idCategorie === this.selectedCatId);
   }
 
   confirmDelete(id: number) {

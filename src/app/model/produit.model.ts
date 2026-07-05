@@ -15,6 +15,5 @@ export class ProduitModel {
   prixProduit!: number;
   dateCreation!: Date;
   categorie?: Categorie;
-  imageStr = '';
   images: Image[] = [];
 }

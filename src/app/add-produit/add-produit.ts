@@ -36,7 +36,7 @@ export class AddProduit implements OnInit {
 
   addProduit() {
     this.errorMessage = '';
-    const cat = this.categories.find(c => c.idCategorie == this.newIdCat);
+    const cat = this.categories.find(c => c.idCategorie === this.newIdCat);
     if (!cat) {
       this.errorMessage = 'Veuillez sélectionner une catégorie.';
       return;

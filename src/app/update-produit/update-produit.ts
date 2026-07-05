@@ -70,7 +70,7 @@ export class UpdateProduit implements OnInit {
 
   updateProduit() {
     this.currentProduit.categorie = this.categories.find(
-      cat => cat.idCategorie == this.updatedCatId,
+      cat => cat.idCategorie === this.updatedCatId,
     );
     this.isLoading = true;
     this.produitService.updateProduit(this.currentProduit).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
