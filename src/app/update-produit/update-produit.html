@@ -104,7 +104,7 @@
                     <div class="card border-0 shadow-sm rounded-3 overflow-hidden h-100">
                       <div style="height: 110px; cursor: pointer;"
                            (click)="selectMainImage(img)">
-                        <img [src]="getImageUrl(img)" alt="Image produit"
+                        <img [src]="img | imageUrl" alt="Image produit"
                              class="w-100 h-100" style="object-fit: cover;">
                       </div>
                       <div class="card-body p-2">

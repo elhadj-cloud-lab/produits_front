@@ -8,10 +8,11 @@ import {DatePipe} from '@angular/common';
 import {Categorie} from '../model/categorie.model';
 import {AuthService} from '../services/auth-service';
 import {Image} from '../model/image.model';
+import {imageToDataUrl, ImageUrlPipe} from '../shared/image-url.pipe';
 
 @Component({
   selector: 'app-update-produit',
-  imports: [FormsModule, DatePipe],
+  imports: [FormsModule, DatePipe, ImageUrlPipe],
   templateUrl: './update-produit.html',
   styles: ``,
 })
@@ -51,7 +52,7 @@ export class UpdateProduit implements OnInit {
     this.produitService.getImagesByProduct(this.currentProduit.idProduit).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(images => {
       this.currentProduit.images = images ?? [];
       if (images?.length > 0) {
-        this.mainImageSrc = this.getImageUrl(images[0]);
+        this.mainImageSrc = imageToDataUrl(images[0]);
       }
     });
   }
@@ -88,7 +89,7 @@ export class UpdateProduit implements OnInit {
           this.isUploadingImage = false;
           if (!this.currentProduit.images) this.currentProduit.images = [];
           this.currentProduit.images.push(img);
-          this.mainImageSrc = this.getImageUrl(img);
+          this.mainImageSrc = imageToDataUrl(img);
           this.uploadedImage = undefined;
         },
         error: () => (this.isUploadingImage = false),
@@ -110,24 +111,13 @@ export class UpdateProduit implements OnInit {
       if (index > -1) this.currentProduit.images.splice(index, 1);
       this.mainImageSrc =
         this.currentProduit.images.length > 0
-          ? this.getImageUrl(this.currentProduit.images[0])
+          ? imageToDataUrl(this.currentProduit.images[0])
           : 'assets/default-image.png';
     });
   }
 
   selectMainImage(img: Image) {
-    this.mainImageSrc = this.getImageUrl(img);
+    this.mainImageSrc = imageToDataUrl(img);
   }
 
-  getImageUrl(img: Image): string {
-    if (!img?.image) return 'assets/default-image.png';
-    if (typeof img.image === 'string') {
-      return `data:${img.type};base64,${img.image}`;
-    }
-    if (Array.isArray(img.image)) {
-      const base64 = btoa(img.image.map(b => String.fromCharCode(b & 0xff)).join(''));
-      return `data:${img.type};base64,${base64}`;
-    }
-    return 'assets/default-image.png';
-  }
 }

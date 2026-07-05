@@ -6,7 +6,7 @@ import {ProduitModel} from '../model/produit.model';
 import {ProduitService} from '../services/produit-service';
 import {AuthService} from '../services/auth-service';
 import {Categorie} from '../model/categorie.model';
-import {Image} from '../model/image.model';
+import {imageToDataUrl} from '../shared/image-url.pipe';
 
 @Component({
   selector: 'app-produits',
@@ -44,11 +44,7 @@ export class Produits implements OnInit {
       this.applyFilter();
       this.isLoading = false;
 
-      const catMap = new Map<number, Categorie>();
-      prods.forEach(p => {
-        if (p.categorie?.idCategorie) catMap.set(p.categorie.idCategorie, p.categorie);
-      });
-      this.categories = Array.from(catMap.values());
+      this.categories = this.produitService.extractCategories(prods);
 
       prods.forEach(prod => this.chargerImageProduit(prod));
     });
@@ -58,20 +54,9 @@ export class Produits implements OnInit {
     this.produitService.getImagesByProduct(prod.idProduit).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(images => {
       if (images?.length > 0) {
         // update() garantit une mise à jour atomique du signal
-        this.imageUrls.update(prev => ({...prev, [prod.idProduit]: this.toDataUrl(images[0])}));
+        this.imageUrls.update(prev => ({...prev, [prod.idProduit]: imageToDataUrl(images[0])}));
       }
     });
-  }
-
-  private toDataUrl(img: Image): string {
-    if (Array.isArray(img.image)) {
-      const base64 = btoa(img.image.map(b => String.fromCharCode(b & 0xff)).join(''));
-      return `data:${img.type};base64,${base64}`;
-    }
-    if (typeof img.image === 'string') {
-      return `data:${img.type};base64,${img.image}`;
-    }
-    return '';
   }
 
   filtrerParCategorie(catId: number | null) {

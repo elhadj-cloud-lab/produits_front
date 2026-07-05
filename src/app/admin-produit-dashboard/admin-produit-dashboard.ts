@@ -2,7 +2,7 @@ import {Component, DestroyRef, inject, OnInit, OnDestroy, ViewChild, ElementRef}
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {CommonModule, CurrencyPipe} from '@angular/common';
 import {ProduitService} from '../services/produit-service';
-import {ProduitModel} from '../model/produit.model';
+import {ProduitModel, ProduitStats} from '../model/produit.model';
 import {
   Chart,
   ArcElement,
@@ -21,11 +21,7 @@ Chart.register(ArcElement, Tooltip, Legend, DoughnutController);
 export class AdminProduitDashboard implements OnInit, OnDestroy {
   @ViewChild('categoryChart') categoryChartRef!: ElementRef<HTMLCanvasElement>;
 
-  totalProduits = 0;
-  avgPrice = 0;
-  nbCategories = 0;
-  topProduits: ProduitModel[] = [];
-  prodCategStats: {label: string; count: number}[] = [];
+  stats: ProduitStats | null = null;
   isLoading = false;
   lastUpdated: Date | null = null;
 
@@ -47,26 +43,7 @@ export class AdminProduitDashboard implements OnInit, OnDestroy {
     this.isLoading = true;
     this.produitService.listerProduits().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: prods => {
-        this.totalProduits = prods.length;
-        this.avgPrice =
-          prods.length > 0
-            ? prods.reduce((sum, p) => sum + (p.prixProduit ?? 0), 0) / prods.length
-            : 0;
-
-        const catMap = new Map<string, number>();
-        prods.forEach(p => {
-          const cat = p.categorie?.nomCategorie ?? 'Sans catégorie';
-          catMap.set(cat, (catMap.get(cat) ?? 0) + 1);
-        });
-        this.nbCategories = catMap.size;
-        this.prodCategStats = Array.from(catMap.entries())
-          .map(([label, count]) => ({label, count}))
-          .sort((a, b) => b.count - a.count);
-
-        this.topProduits = [...prods]
-          .sort((a, b) => (b.prixProduit ?? 0) - (a.prixProduit ?? 0))
-          .slice(0, 5);
-
+        this.stats = this.produitService.computeStats(prods);
         this.isLoading = false;
         this.lastUpdated = new Date();
         setTimeout(() => this.renderCategoryChart(), 50);
@@ -76,7 +53,7 @@ export class AdminProduitDashboard implements OnInit, OnDestroy {
   }
 
   private renderCategoryChart(): void {
-    if (!this.categoryChartRef || this.prodCategStats.length === 0) return;
+    if (!this.categoryChartRef || !this.stats?.prodCategStats.length) return;
     this.categoryChart?.destroy();
 
     const palette = [
@@ -87,11 +64,11 @@ export class AdminProduitDashboard implements OnInit, OnDestroy {
     this.categoryChart = new Chart(this.categoryChartRef.nativeElement, {
       type: 'doughnut',
       data: {
-        labels: this.prodCategStats.map(s => s.label),
+        labels: this.stats.prodCategStats.map(s => s.label),
         datasets: [
           {
-            data: this.prodCategStats.map(s => s.count),
-            backgroundColor: this.prodCategStats.map((_, i) => palette[i % palette.length]),
+            data: this.stats.prodCategStats.map(s => s.count),
+            backgroundColor: this.stats.prodCategStats.map((_: unknown, i: number) => palette[i % palette.length]),
             borderWidth: 2,
             borderColor: '#fff',
           },

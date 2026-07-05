@@ -1,9 +1,8 @@
 import { Injectable } from '@angular/core';
 import {HttpClient, HttpParams} from '@angular/common/http';
-import {ProduitModel} from '../model/produit.model';
+import {ProduitModel, ProduitStats} from '../model/produit.model';
 import {Observable} from 'rxjs';
 import {Categorie} from '../model/categorie.model';
-import {AuthService} from './auth-service';
 import {Image} from '../model/image.model';
 import {environment} from '../../environments/environment';
 
@@ -12,10 +11,35 @@ import {environment} from '../../environments/environment';
 })
 export class ProduitService {
 
-  produits!: ProduitModel[];
+  constructor(private http: HttpClient) {}
 
-  constructor(private http: HttpClient,
-              private authService: AuthService,) {
+  extractCategories(prods: ProduitModel[]): Categorie[] {
+    const catMap = new Map<number, Categorie>();
+    prods.forEach(p => {
+      if (p.categorie?.idCategorie) catMap.set(p.categorie.idCategorie, p.categorie);
+    });
+    return Array.from(catMap.values());
+  }
+
+  computeStats(prods: ProduitModel[]): ProduitStats {
+    const catMap = new Map<string, number>();
+    prods.forEach(p => {
+      const cat = p.categorie?.nomCategorie ?? 'Sans catégorie';
+      catMap.set(cat, (catMap.get(cat) ?? 0) + 1);
+    });
+    return {
+      totalProduits: prods.length,
+      avgPrice: prods.length > 0
+        ? prods.reduce((sum, p) => sum + (p.prixProduit ?? 0), 0) / prods.length
+        : 0,
+      nbCategories: catMap.size,
+      topProduits: [...prods]
+        .sort((a, b) => (b.prixProduit ?? 0) - (a.prixProduit ?? 0))
+        .slice(0, 5),
+      prodCategStats: Array.from(catMap.entries())
+        .map(([label, count]) => ({label, count}))
+        .sort((a, b) => b.count - a.count),
+    };
   }
 
   listerProduits(): Observable<ProduitModel[]> {
@@ -83,11 +107,11 @@ export class ProduitService {
     return this.http.post<Image>(url, imageFormData);
   }
 
-  uploadImageProd(file: File, filename: string, idProd: number): Observable<any> {
+  uploadImageProd(file: File, filename: string, idProd: number): Observable<Image> {
     const imageFormData = new FormData();
     imageFormData.append('image', file, filename);
     const url = `${environment.apiURLImage + '/uploadImageProd'}/${idProd}`;
-    return this.http.post(url, imageFormData);
+    return this.http.post<Image>(url, imageFormData);
   }
 
   getImagesByProduct(idProd: number): Observable<Image[]> {
