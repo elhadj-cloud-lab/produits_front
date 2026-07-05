@@ -4,6 +4,7 @@ import {ProduitModel} from '../model/produit.model';
 import {ProduitService} from '../services/produit-service';
 import {FormsModule} from '@angular/forms';
 import {CommonModule} from '@angular/common';
+import {ToastrService} from 'ngx-toastr';
 
 @Component({
   selector: 'app-recherche-par-nom',
@@ -17,6 +18,7 @@ export class RechercheParNom implements OnInit {
   private allProduits: ProduitModel[] = [];
 
   private readonly destroyRef = inject(DestroyRef);
+  private readonly toastr = inject(ToastrService);
 
   constructor(private produitService: ProduitService) {}
 
@@ -26,6 +28,7 @@ export class RechercheParNom implements OnInit {
         this.allProduits = prods;
         this.produits = prods;
       },
+      error: () => this.toastr.error('Impossible de charger les produits', 'Erreur'),
     });
   }
 
@@ -33,6 +36,7 @@ export class RechercheParNom implements OnInit {
     if (this.nomProduit.trim()) {
       this.produitService.rechercherParNom(this.nomProduit).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: prods => (this.produits = prods),
+        error: () => this.toastr.error('Erreur lors de la recherche', 'Erreur'),
       });
     } else {
       this.produits = [...this.allProduits];

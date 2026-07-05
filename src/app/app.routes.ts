@@ -7,7 +7,7 @@ import {RechercheParNom} from './recherche-par-nom/recherche-par-nom';
 import {ListeCategories} from './liste-categories/liste-categories';
 import {Login} from './login/login';
 import {Forbidden} from './forbidden/forbidden';
-import {produitGuard} from './produit-guard';
+import {adminGuard} from './produit-guard';
 import {Register} from './register/register';
 import {VerifEmail} from './verif-email/verif-email';
 import {AdminUsers} from './admin-users/admin-users';
@@ -16,8 +16,8 @@ import {AdminProduitDashboard} from './admin-produit-dashboard/admin-produit-das
 
 export const routes: Routes = [
   {path: "produits", component: Produits },
-  {path: "add-produit", component: AddProduit, canActivate:[produitGuard] },
-  {path: "updateProduit/:id", component: UpdateProduit, canActivate: [produitGuard]},
+  {path: "add-produit", component: AddProduit, canActivate:[adminGuard] },
+  {path: "updateProduit/:id", component: UpdateProduit, canActivate: [adminGuard]},
   {path: "", redirectTo: "produits", pathMatch: "full"},
   {path: "rechercheParCategorie", component : RechercheParCategorie},
   {path: "rechercheParNom", component : RechercheParNom},
@@ -25,8 +25,8 @@ export const routes: Routes = [
   {path: 'app-forbidden', component: Forbidden},
   {path:'register',component: Register},
   { path: 'verifEmail', component: VerifEmail },
-  {path: "listeCategories", component : ListeCategories, canActivate: [produitGuard]},
-  {path: "admin/users", component: AdminUsers, canActivate: [produitGuard]},
-  {path: "admin/dashboard", component: AdminDashboard, canActivate: [produitGuard]},
-  {path: "admin/produit-dashboard", component: AdminProduitDashboard, canActivate: [produitGuard]},
+  {path: "listeCategories", component : ListeCategories, canActivate: [adminGuard]},
+  {path: "admin/users", component: AdminUsers, canActivate: [adminGuard]},
+  {path: "admin/dashboard", component: AdminDashboard, canActivate: [adminGuard]},
+  {path: "admin/produit-dashboard", component: AdminProduitDashboard, canActivate: [adminGuard]},
 ];

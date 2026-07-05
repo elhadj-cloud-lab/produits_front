@@ -9,6 +9,7 @@ import {Categorie} from '../model/categorie.model';
 import {AuthService} from '../services/auth-service';
 import {Image} from '../model/image.model';
 import {imageToDataUrl, ImageUrlPipe} from '../shared/image-url.pipe';
+import {ToastrService} from 'ngx-toastr';
 
 @Component({
   selector: 'app-update-produit',
@@ -28,6 +29,7 @@ export class UpdateProduit implements OnInit {
   confirmDeleteId: number | null = null;
 
   private readonly destroyRef = inject(DestroyRef);
+  private readonly toastr = inject(ToastrService);
 
   constructor(
     private activatedRoute: ActivatedRoute,
@@ -37,23 +39,32 @@ export class UpdateProduit implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.produitService.listeCategories().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(cats => (this.categories = cats));
+    this.produitService.listeCategories().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: cats => (this.categories = cats),
+      error: () => this.toastr.error('Impossible de charger les catégories', 'Erreur'),
+    });
     this.produitService
       .consulterProduit(this.activatedRoute.snapshot.params['id'])
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(produit => {
-        this.currentProduit = produit;
-        this.updatedCatId = produit.categorie?.idCategorie ?? 0;
-        this.loadProductImages();
+      .subscribe({
+        next: produit => {
+          this.currentProduit = produit;
+          this.updatedCatId = produit.categorie?.idCategorie ?? 0;
+          this.loadProductImages();
+        },
+        error: () => this.toastr.error('Impossible de charger le produit', 'Erreur'),
       });
   }
 
   loadProductImages() {
-    this.produitService.getImagesByProduct(this.currentProduit.idProduit).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(images => {
-      this.currentProduit.images = images ?? [];
-      if (images?.length > 0) {
-        this.mainImageSrc = imageToDataUrl(images[0]);
-      }
+    this.produitService.getImagesByProduct(this.currentProduit.idProduit).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: images => {
+        this.currentProduit.images = images ?? [];
+        if (images?.length > 0) {
+          this.mainImageSrc = imageToDataUrl(images[0]);
+        }
+      },
+      error: () => this.toastr.error('Impossible de charger les images', 'Erreur'),
     });
   }
 
@@ -64,7 +75,10 @@ export class UpdateProduit implements OnInit {
     this.isLoading = true;
     this.produitService.updateProduit(this.currentProduit).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => this.router.navigate(['produits']),
-      error: () => (this.isLoading = false),
+      error: () => {
+        this.isLoading = false;
+        this.toastr.error('Impossible d\'enregistrer le produit', 'Erreur');
+      },
     });
   }
 
@@ -106,13 +120,16 @@ export class UpdateProduit implements OnInit {
 
   supprimerImage(img: Image) {
     this.confirmDeleteId = null;
-    this.produitService.supprimerImage(img.idImage).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-      const index = this.currentProduit.images.indexOf(img);
-      if (index > -1) this.currentProduit.images.splice(index, 1);
-      this.mainImageSrc =
-        this.currentProduit.images.length > 0
-          ? imageToDataUrl(this.currentProduit.images[0])
-          : 'assets/default-image.png';
+    this.produitService.supprimerImage(img.idImage).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        const index = this.currentProduit.images.indexOf(img);
+        if (index > -1) this.currentProduit.images.splice(index, 1);
+        this.mainImageSrc =
+          this.currentProduit.images.length > 0
+            ? imageToDataUrl(this.currentProduit.images[0])
+            : 'assets/default-image.png';
+      },
+      error: () => this.toastr.error('Impossible de supprimer l\'image', 'Erreur'),
     });
   }
 

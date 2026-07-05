@@ -7,6 +7,7 @@ import {ProduitService} from '../services/produit-service';
 import {AuthService} from '../services/auth-service';
 import {Categorie} from '../model/categorie.model';
 import {imageToDataUrl} from '../shared/image-url.pipe';
+import {ToastrService} from 'ngx-toastr';
 
 @Component({
   selector: 'app-produits',
@@ -26,6 +27,7 @@ export class Produits implements OnInit {
   readonly imageUrls = signal<Record<number, string>>({});
 
   private readonly destroyRef = inject(DestroyRef);
+  private readonly toastr = inject(ToastrService);
 
   constructor(
     private produitService: ProduitService,
@@ -39,14 +41,18 @@ export class Produits implements OnInit {
   chargerProduits() {
     this.isLoading = true;
     this.imageUrls.set({});
-    this.produitService.listerProduits().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(prods => {
-      this.allProduits = prods;
-      this.applyFilter();
-      this.isLoading = false;
-
-      this.categories = this.produitService.extractCategories(prods);
-
-      prods.forEach(prod => this.chargerImageProduit(prod));
+    this.produitService.listerProduits().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: prods => {
+        this.allProduits = prods;
+        this.applyFilter();
+        this.isLoading = false;
+        this.categories = this.produitService.extractCategories(prods);
+        prods.forEach(prod => this.chargerImageProduit(prod));
+      },
+      error: () => {
+        this.isLoading = false;
+        this.toastr.error('Impossible de charger les produits', 'Erreur');
+      },
     });
   }
 
@@ -81,9 +87,12 @@ export class Produits implements OnInit {
 
   supprimerProduit(produit: ProduitModel) {
     this.confirmDeleteId = null;
-    this.produitService.supprimerProduit(produit.idProduit).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-      this.allProduits = this.allProduits.filter(p => p.idProduit !== produit.idProduit);
-      this.applyFilter();
+    this.produitService.supprimerProduit(produit.idProduit).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.allProduits = this.allProduits.filter(p => p.idProduit !== produit.idProduit);
+        this.applyFilter();
+      },
+      error: () => this.toastr.error('Impossible de supprimer le produit', 'Erreur'),
     });
   }
 }

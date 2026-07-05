@@ -5,6 +5,7 @@ import {ProduitService} from '../services/produit-service';
 import {CommonModule} from '@angular/common';
 import {UpdateCategorie} from '../update-categorie/update-categorie';
 import {AuthService} from '../services/auth-service';
+import {ToastrService} from 'ngx-toastr';
 
 @Component({
   selector: 'app-liste-categories',
@@ -18,6 +19,7 @@ export class ListeCategories implements OnInit {
   ajout = true;
 
   private readonly destroyRef = inject(DestroyRef);
+  private readonly toastr = inject(ToastrService);
 
   constructor(private produitService: ProduitService,
               public authService: AuthService) {}
@@ -36,12 +38,14 @@ export class ListeCategories implements OnInit {
         this.chargerCategories();
         this.nouvelleCategorie();
       },
+      error: () => this.toastr.error('Impossible d\'enregistrer la catégorie', 'Erreur'),
     });
   }
 
   chargerCategories(){
     this.produitService.listeCategories().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: cats => (this.categories = cats),
+      error: () => this.toastr.error('Impossible de charger les catégories', 'Erreur'),
     });
   }
 
@@ -61,6 +65,7 @@ export class ListeCategories implements OnInit {
     if (confirm(`Supprimer la catégorie "${cat.nomCategorie}" ?`)) {
       this.produitService.supprimerCategorie(cat.idCategorie).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => this.chargerCategories(),
+        error: () => this.toastr.error('Impossible de supprimer la catégorie', 'Erreur'),
       });
     }
   }
