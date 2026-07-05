@@ -8,7 +8,8 @@ import {ListeCategories} from './liste-categories/liste-categories';
 import {Login} from './login/login';
 import {Forbidden} from './forbidden/forbidden';
 import {authGuard} from './auth-guard';
-import {adminGuard} from './produit-guard';
+import {adminGuard} from './admin-guard';
+import {NotFound} from './not-found/not-found';
 import {Register} from './register/register';
 import {VerifEmail} from './verif-email/verif-email';
 import {AdminUsers} from './admin-users/admin-users';
@@ -30,4 +31,5 @@ export const routes: Routes = [
   {path: 'admin/users', component: AdminUsers, canActivate: [authGuard, adminGuard]},
   {path: 'admin/dashboard', component: AdminDashboard, canActivate: [authGuard, adminGuard]},
   {path: 'admin/produit-dashboard', component: AdminProduitDashboard, canActivate: [authGuard, adminGuard]},
+  {path: '**', component: NotFound},
 ];

@@ -17,6 +17,7 @@ export class ListeCategories implements OnInit {
   categories: Categorie[] = [];
   updatedCategorie: Categorie = {nomCategorie: '', description: ''};
   ajout = true;
+  confirmDeleteId: number | null = null;
 
   private readonly destroyRef = inject(DestroyRef);
   private readonly toastr = inject(ToastrService);
@@ -62,12 +63,19 @@ export class ListeCategories implements OnInit {
   supprimerCategorie(cat: Categorie) {
     if (!cat.idCategorie) return;
 
-    if (confirm(`Supprimer la catégorie "${cat.nomCategorie}" ?`)) {
-      this.produitService.supprimerCategorie(cat.idCategorie).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-        next: () => this.chargerCategories(),
-        error: () => this.toastr.error('Impossible de supprimer la catégorie', 'Erreur'),
-      });
-    }
+    this.confirmDeleteId = null;
+    this.produitService.supprimerCategorie(cat.idCategorie).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => this.chargerCategories(),
+      error: () => this.toastr.error('Impossible de supprimer la catégorie', 'Erreur'),
+    });
+  }
+
+  confirmDelete(id: number) {
+    this.confirmDeleteId = id;
+  }
+
+  cancelDelete() {
+    this.confirmDeleteId = null;
   }
 
 }

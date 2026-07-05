@@ -1,8 +1,16 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { ToastrService } from 'ngx-toastr';
 
 import { AddProduit } from './add-produit';
+
+const mockToastr = {
+  success: vi.fn(),
+  error: vi.fn(),
+  warning: vi.fn(),
+  info: vi.fn(),
+};
 
 describe('AddProduit', () => {
   let component: AddProduit;
@@ -11,7 +19,11 @@ describe('AddProduit', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [AddProduit],
-      providers: [provideRouter([]), provideHttpClientTesting()],
+      providers: [
+        provideRouter([]),
+        provideHttpClientTesting(),
+        { provide: ToastrService, useValue: mockToastr },
+      ],
     })
     .compileComponents();
 

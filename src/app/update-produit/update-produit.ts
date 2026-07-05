@@ -106,7 +106,10 @@ export class UpdateProduit implements OnInit {
           this.mainImageSrc = imageToDataUrl(img);
           this.uploadedImage = undefined;
         },
-        error: () => (this.isUploadingImage = false),
+        error: () => {
+          this.isUploadingImage = false;
+          this.toastr.error('Impossible d\'ajouter l\'image', 'Erreur');
+        },
       });
   }
 

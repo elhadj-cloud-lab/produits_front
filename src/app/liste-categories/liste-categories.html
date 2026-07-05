@@ -26,7 +26,23 @@
 
             @if(authService.isAdmin()) {
               <td><a class="btn btn-success"  (click)="updateCategorie(cat)">Editer</a></td>
-              <td><a class="btn btn-danger btn-sm" (click)="supprimerCategorie(cat)">Supprimer</a></td>
+              <td>
+                @if (confirmDeleteId === cat.idCategorie) {
+                  <div class="d-flex gap-1">
+                    <button class="btn btn-danger btn-sm"
+                            (click)="supprimerCategorie(cat)">
+                      Confirmer
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm"
+                            (click)="cancelDelete()">✕</button>
+                  </div>
+                } @else {
+                  <button class="btn btn-danger btn-sm"
+                          (click)="confirmDelete(cat.idCategorie!)">
+                    Supprimer
+                  </button>
+                }
+              </td>
             }
           </tr>
           </tbody>

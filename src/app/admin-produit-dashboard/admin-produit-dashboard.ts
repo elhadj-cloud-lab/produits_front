@@ -10,6 +10,7 @@ import {
   Legend,
   DoughnutController,
 } from 'chart.js';
+import {ToastrService} from 'ngx-toastr';
 
 Chart.register(ArcElement, Tooltip, Legend, DoughnutController);
 
@@ -29,6 +30,7 @@ export class AdminProduitDashboard implements OnInit, OnDestroy, AfterViewChecke
 
   private readonly destroyRef = inject(DestroyRef);
   private readonly chartRenderPending = signal(false);
+  private readonly toastr = inject(ToastrService);
 
   constructor(private produitService: ProduitService) {}
 
@@ -60,7 +62,10 @@ export class AdminProduitDashboard implements OnInit, OnDestroy, AfterViewChecke
         this.lastUpdated = new Date();
         this.chartRenderPending.set(true);
       },
-      error: () => (this.isLoading = false),
+      error: () => {
+        this.isLoading = false;
+        this.toastr.error('Impossible de charger les statistiques', 'Erreur');
+      },
     });
   }
 

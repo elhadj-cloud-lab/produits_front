@@ -95,18 +95,6 @@ export class ProduitService {
     return this.http.delete<void>(`${environment.apiURLCategorie}/${id}`);
   }
 
-  loadImage(id: number): Observable<Image> {
-    const url = `${environment.apiURLImage + '/get/info'}/${id}`;
-    return this.http.get<Image>(url);
-  }
-
-  uploadImage(file: File, filename: string) {
-    const imageFormData = new FormData();
-    imageFormData.append('image', file, filename);
-    const url = `${environment.apiURLImage + '/upload'}`;
-    return this.http.post<Image>(url, imageFormData);
-  }
-
   uploadImageProd(file: File, filename: string, idProd: number): Observable<Image> {
     const imageFormData = new FormData();
     imageFormData.append('image', file, filename);

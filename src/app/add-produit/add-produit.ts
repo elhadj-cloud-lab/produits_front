@@ -6,6 +6,7 @@ import {ProduitService} from '../services/produit-service';
 import {Router} from '@angular/router';
 import {Categorie} from '../model/categorie.model';
 import {catchError, of, switchMap} from 'rxjs';
+import {ToastrService} from 'ngx-toastr';
 
 @Component({
   selector: 'app-add-produit',
@@ -24,6 +25,7 @@ export class AddProduit implements OnInit {
   isDragging = false;
 
   private readonly destroyRef = inject(DestroyRef);
+  private readonly toastr = inject(ToastrService);
 
   constructor(private produitService: ProduitService, private router: Router) {}
 
@@ -50,7 +52,13 @@ export class AddProduit implements OnInit {
         this.uploadedImage
           ? this.produitService
               .uploadImageProd(this.uploadedImage!, this.uploadedImage!.name, prod.idProduit)
-              .pipe(catchError(() => of(null)))
+              .pipe(catchError(() => {
+                this.toastr.warning(
+                  'Produit créé, mais l\'upload de l\'image a échoué.',
+                  'Attention',
+                );
+                return of(null);
+              }))
           : of(null)
       )
     ).subscribe({

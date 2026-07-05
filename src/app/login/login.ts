@@ -14,7 +14,7 @@ import {FormsModule} from '@angular/forms';
 })
 export class Login {
   user = new User();
-  err=0;
+  hasError = false;
   message : string = "login ou mot de passe erronés..";
 
   constructor(private authService : AuthService,
@@ -31,7 +31,7 @@ export class Login {
         }
       },
       error: (err: HttpErrorResponse) => {
-        this.err = 1;
+        this.hasError = true;
         if (err.error?.errorCause === 'disabled')
           this.message = 'Utilisateur désactivé, Veuillez contacter votre Administrateur';
       },
