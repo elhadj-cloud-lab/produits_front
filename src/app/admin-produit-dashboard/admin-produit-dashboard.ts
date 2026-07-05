@@ -1,4 +1,5 @@
-import {Component, OnInit, OnDestroy, ViewChild, ElementRef} from '@angular/core';
+import {Component, DestroyRef, inject, OnInit, OnDestroy, ViewChild, ElementRef} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {CommonModule, CurrencyPipe} from '@angular/common';
 import {ProduitService} from '../services/produit-service';
 import {ProduitModel} from '../model/produit.model';
@@ -30,6 +31,8 @@ export class AdminProduitDashboard implements OnInit, OnDestroy {
 
   private categoryChart: Chart | null = null;
 
+  private readonly destroyRef = inject(DestroyRef);
+
   constructor(private produitService: ProduitService) {}
 
   ngOnInit(): void {
@@ -42,7 +45,7 @@ export class AdminProduitDashboard implements OnInit, OnDestroy {
 
   loadStats(): void {
     this.isLoading = true;
-    this.produitService.listerProduits().subscribe({
+    this.produitService.listerProduits().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: prods => {
         this.totalProduits = prods.length;
         this.avgPrice =

@@ -1,4 +1,5 @@
-import {Component, OnInit, signal} from '@angular/core';
+import {Component, DestroyRef, inject, OnInit, signal} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {NavigationEnd, Router, RouterLink, RouterOutlet} from '@angular/router';
 import {AuthService} from './services/auth-service';
 import {filter} from 'rxjs';
@@ -11,6 +12,8 @@ import {filter} from 'rxjs';
 })
 export class App implements OnInit {
 
+  private readonly destroyRef = inject(DestroyRef);
+
   constructor (public authService: AuthService,
                private router: Router,) {}
 
@@ -19,7 +22,8 @@ export class App implements OnInit {
     const publicRoutes = ['/login', '/register', '/verifEmail'];
 
     this.router.events.pipe(
-      filter(event => event instanceof NavigationEnd)
+      filter(event => event instanceof NavigationEnd),
+      takeUntilDestroyed(this.destroyRef)
     ).subscribe((event: NavigationEnd) => {
       const currentUrl = event.urlAfterRedirects;
 

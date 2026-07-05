@@ -1,4 +1,5 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, DestroyRef, inject, OnInit} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {ProduitService} from '../services/produit-service';
 import {ProduitModel} from '../model/produit.model';
 import {ActivatedRoute, Router} from '@angular/router';
@@ -25,6 +26,8 @@ export class UpdateProduit implements OnInit {
   isUploadingImage = false;
   confirmDeleteId: number | null = null;
 
+  private readonly destroyRef = inject(DestroyRef);
+
   constructor(
     private activatedRoute: ActivatedRoute,
     public router: Router,
@@ -33,9 +36,10 @@ export class UpdateProduit implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.produitService.listeCategories().subscribe(cats => (this.categories = cats));
+    this.produitService.listeCategories().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(cats => (this.categories = cats));
     this.produitService
       .consulterProduit(this.activatedRoute.snapshot.params['id'])
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(produit => {
         this.currentProduit = produit;
         this.updatedCatId = produit.categorie?.idCategorie ?? 0;
@@ -44,7 +48,7 @@ export class UpdateProduit implements OnInit {
   }
 
   loadProductImages() {
-    this.produitService.getImagesByProduct(this.currentProduit.idProduit).subscribe(images => {
+    this.produitService.getImagesByProduct(this.currentProduit.idProduit).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(images => {
       this.currentProduit.images = images ?? [];
       if (images?.length > 0) {
         this.mainImageSrc = this.getImageUrl(images[0]);
@@ -57,7 +61,7 @@ export class UpdateProduit implements OnInit {
       cat => cat.idCategorie == this.updatedCatId,
     );
     this.isLoading = true;
-    this.produitService.updateProduit(this.currentProduit).subscribe({
+    this.produitService.updateProduit(this.currentProduit).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => this.router.navigate(['produits']),
       error: () => (this.isLoading = false),
     });
@@ -78,6 +82,7 @@ export class UpdateProduit implements OnInit {
     this.isUploadingImage = true;
     this.produitService
       .uploadImageProd(this.uploadedImage, this.uploadedImage.name, this.currentProduit.idProduit)
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (img: Image) => {
           this.isUploadingImage = false;
@@ -100,7 +105,7 @@ export class UpdateProduit implements OnInit {
 
   supprimerImage(img: Image) {
     this.confirmDeleteId = null;
-    this.produitService.supprimerImage(img.idImage).subscribe(() => {
+    this.produitService.supprimerImage(img.idImage).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       const index = this.currentProduit.images.indexOf(img);
       if (index > -1) this.currentProduit.images.splice(index, 1);
       this.mainImageSrc =

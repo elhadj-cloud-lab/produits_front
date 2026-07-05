@@ -1,4 +1,5 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, DestroyRef, inject, OnInit} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {CommonModule} from '@angular/common';
 import {AuthService} from '../services/auth-service';
 import {AppUser} from '../model/user.model';
@@ -16,6 +17,8 @@ export class AdminUsers implements OnInit {
   loading = false;
   revokingUsername: string | null = null;
 
+  private readonly destroyRef = inject(DestroyRef);
+
   constructor(public authService: AuthService,
               private toastr: ToastrService) {}
 
@@ -25,7 +28,7 @@ export class AdminUsers implements OnInit {
 
   chargerUtilisateurs() {
     this.loading = true;
-    this.authService.getAllUsers().subscribe({
+    this.authService.getAllUsers().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (users) => {
         this.users = users;
         this.loading = false;
@@ -59,7 +62,7 @@ export class AdminUsers implements OnInit {
     }
 
     this.revokingUsername = user.username;
-    this.authService.revokeUserSessions(user.username).subscribe({
+    this.authService.revokeUserSessions(user.username).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.revokingUsername = null;
         this.toastr.success(`Sessions de ${user.username} révoquées`, 'Succès');

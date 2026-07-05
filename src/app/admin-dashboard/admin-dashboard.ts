@@ -1,4 +1,5 @@
-import {Component, OnInit, OnDestroy, ViewChild, ElementRef} from '@angular/core';
+import {Component, DestroyRef, inject, OnInit, OnDestroy, ViewChild, ElementRef} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {CommonModule} from '@angular/common';
 import {AuthService} from '../services/auth-service';
 import {ToastrService} from 'ngx-toastr';
@@ -49,6 +50,8 @@ export class AdminDashboard implements OnInit, OnDestroy {
   private hourlyChart: Chart | null = null;
   private dailyChart: Chart | null = null;
 
+  private readonly destroyRef = inject(DestroyRef);
+
   constructor(
     private authService: AuthService,
     private toastr: ToastrService,
@@ -69,7 +72,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
 
   loadStats(): void {
     this.loading = true;
-    this.authService.getDashboardStats().subscribe({
+    this.authService.getDashboardStats().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: data => {
         this.stats = data;
         this.loading = false;

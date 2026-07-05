@@ -1,4 +1,5 @@
-import {Component, OnInit, signal} from '@angular/core';
+import {Component, DestroyRef, inject, OnInit, signal} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {RouterLink} from '@angular/router';
 import {CurrencyPipe, DatePipe} from '@angular/common';
 import {ProduitModel} from '../model/produit.model';
@@ -24,6 +25,8 @@ export class Produits implements OnInit {
   // et les rerend au moment précis où le signal change
   readonly imageUrls = signal<Record<number, string>>({});
 
+  private readonly destroyRef = inject(DestroyRef);
+
   constructor(
     private produitService: ProduitService,
     public authService: AuthService,
@@ -36,7 +39,7 @@ export class Produits implements OnInit {
   chargerProduits() {
     this.isLoading = true;
     this.imageUrls.set({});
-    this.produitService.listerProduits().subscribe(prods => {
+    this.produitService.listerProduits().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(prods => {
       this.allProduits = prods;
       this.applyFilter();
       this.isLoading = false;
@@ -52,7 +55,7 @@ export class Produits implements OnInit {
   }
 
   private chargerImageProduit(prod: ProduitModel) {
-    this.produitService.getImagesByProduct(prod.idProduit).subscribe(images => {
+    this.produitService.getImagesByProduct(prod.idProduit).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(images => {
       if (images?.length > 0) {
         // update() garantit une mise à jour atomique du signal
         this.imageUrls.update(prev => ({...prev, [prod.idProduit]: this.toDataUrl(images[0])}));
@@ -93,7 +96,7 @@ export class Produits implements OnInit {
 
   supprimerProduit(produit: ProduitModel) {
     this.confirmDeleteId = null;
-    this.produitService.supprimerProduit(produit.idProduit).subscribe(() => {
+    this.produitService.supprimerProduit(produit.idProduit).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.allProduits = this.allProduits.filter(p => p.idProduit !== produit.idProduit);
       this.applyFilter();
     });

@@ -1,9 +1,11 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, DestroyRef, inject, OnInit} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {FormsModule} from '@angular/forms';
 import {ProduitModel} from '../model/produit.model';
 import {ProduitService} from '../services/produit-service';
 import {Router} from '@angular/router';
 import {Categorie} from '../model/categorie.model';
+import {catchError, of, switchMap} from 'rxjs';
 
 @Component({
   selector: 'app-add-produit',
@@ -21,10 +23,12 @@ export class AddProduit implements OnInit {
   errorMessage = '';
   isDragging = false;
 
+  private readonly destroyRef = inject(DestroyRef);
+
   constructor(private produitService: ProduitService, private router: Router) {}
 
   ngOnInit() {
-    this.produitService.listeCategories().subscribe({
+    this.produitService.listeCategories().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: cats => (this.categories = cats),
       error: () => (this.errorMessage = 'Impossible de charger les catégories.'),
     });
@@ -40,19 +44,17 @@ export class AddProduit implements OnInit {
     this.newProduit.categorie = cat;
     this.isLoading = true;
 
-    this.produitService.addProduit(this.newProduit).subscribe({
-      next: prod => {
-        if (this.uploadedImage) {
-          this.produitService
-            .uploadImageProd(this.uploadedImage, this.uploadedImage.name, prod.idProduit)
-            .subscribe({
-              next: () => this.router.navigate(['produits']),
-              error: () => this.router.navigate(['produits']),
-            });
-        } else {
-          this.router.navigate(['produits']);
-        }
-      },
+    this.produitService.addProduit(this.newProduit).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      switchMap(prod =>
+        this.uploadedImage
+          ? this.produitService
+              .uploadImageProd(this.uploadedImage!, this.uploadedImage!.name, prod.idProduit)
+              .pipe(catchError(() => of(null)))
+          : of(null)
+      )
+    ).subscribe({
+      next: () => this.router.navigate(['produits']),
       error: () => {
         this.isLoading = false;
         this.errorMessage = 'Erreur lors de la création du produit. Veuillez réessayer.';
