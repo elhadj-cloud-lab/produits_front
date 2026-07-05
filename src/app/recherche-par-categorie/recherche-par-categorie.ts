@@ -1,10 +1,11 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, DestroyRef, inject, OnInit} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {Categorie} from '../model/categorie.model';
 import {ProduitModel} from '../model/produit.model';
 import {ProduitService} from '../services/produit-service';
-import {Router} from '@angular/router';
 import {FormsModule} from '@angular/forms';
 import {CommonModule} from '@angular/common';
+import {ToastrService} from 'ngx-toastr';
 
 @Component({
   selector: 'app-recherche-par-categorie',
@@ -13,24 +14,26 @@ import {CommonModule} from '@angular/common';
   styles: ``,
 })
 export class RechercheParCategorie implements OnInit {
-  produits! : ProduitModel[];
-  idCategorie! : number;
-  categories! : Categorie[];
+  produits: ProduitModel[] = [];
+  idCategorie!: number;
+  categories: Categorie[] = [];
 
-  constructor(private produitService: ProduitService,
-              private router: Router,) {
-  }
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly toastr = inject(ToastrService);
+
+  constructor(private produitService: ProduitService) {}
 
   ngOnInit(): void {
-    this.produitService.listeCategories().subscribe(cats => {
-      this.categories = cats;
+    this.produitService.listeCategories().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: cats => (this.categories = cats),
+      error: () => this.toastr.error('Impossible de charger les catégories', 'Erreur'),
     });
   }
 
   onChange() {
-    this.produitService.rechercherParCategorie(this.idCategorie).
-    subscribe(prods =>{this.produits=prods});
-    console.log("Produits recherche");
-    console.log(this.produits);
+    this.produitService.rechercherParCategorie(this.idCategorie).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: prods => (this.produits = prods),
+      error: () => this.toastr.error('Erreur lors de la recherche', 'Erreur'),
+    });
   }
 }

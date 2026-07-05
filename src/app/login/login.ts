@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import {Component} from '@angular/core';
+import {HttpErrorResponse} from '@angular/common/http';
 import {User} from '../model/user.model';
 import {AuthService} from '../services/auth-service';
 import {Router, RouterLink} from '@angular/router';
@@ -13,27 +14,28 @@ import {FormsModule} from '@angular/forms';
 })
 export class Login {
   user = new User();
-  err=0;
+  hasError = false;
   message : string = "login ou mot de passe erronés..";
 
   constructor(private authService : AuthService,
               private  router: Router) { }
 
-  onLoggedin(){
+  onLoggedin() {
     this.authService.login(this.user).subscribe({
-      next: (data) => {
-        let jwToken = data.headers.get('Authorization')!;
-        let refreshToken = data.headers.get('Refresh-Token')!;
-        this.authService.saveTokens(jwToken, refreshToken);
-        this.router.navigate(['/']);
+      next: data => {
+        const accessToken = data.headers.get('Authorization');
+        const refreshToken = data.headers.get('Refresh-Token');
+        if (accessToken && refreshToken) {
+          this.authService.saveTokens(accessToken, refreshToken);
+          this.router.navigate(['/']);
+        }
       },
-      error: (err: any) => {
-        this.err = 1;
-        if (err.error.errorCause=='disabled')
-          this.message="Utilisateur désactivé, Veuillez contacter votre Administrateur";
-      }
+      error: (err: HttpErrorResponse) => {
+        this.hasError = true;
+        if (err.error?.errorCause === 'disabled')
+          this.message = 'Utilisateur désactivé, Veuillez contacter votre Administrateur';
+      },
     });
-
   }
 
 }

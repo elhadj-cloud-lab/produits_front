@@ -1,5 +1,6 @@
 import {Component, OnInit} from '@angular/core';
-import {FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
+import {HttpErrorResponse} from '@angular/common/http';
+import {AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators} from '@angular/forms';
 import {Router, RouterLink} from '@angular/router';
 import {User} from '../model/user.model';
 import {AuthService} from '../services/auth-service';
@@ -7,16 +8,14 @@ import {ToastrService} from 'ngx-toastr';
 
 @Component({
   selector: 'app-register',
-  imports: [FormsModule, ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './register.html',
   styleUrl: './register.css',
 })
 export class Register implements OnInit {
-  public user = new User();
-  confirmPassword?: string;
   myForm!: FormGroup;
-  err : any;
-  loading : boolean = false;
+  err: string | null = null;
+  loading = false;
 
   constructor(private formBuilder: FormBuilder,
               private authService : AuthService,
@@ -24,33 +23,38 @@ export class Register implements OnInit {
               private toastr: ToastrService
   ) {}
 
+  private static passwordMatchValidator(form: AbstractControl): ValidationErrors | null {
+    const pw = form.get('password')?.value;
+    const confirm = form.get('confirmPassword')?.value;
+    return pw === confirm ? null : {passwordMismatch: true};
+  }
+
   ngOnInit(): void {
     this.myForm = this.formBuilder.group({
-      username: ['', [Validators.required]],
+      username: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
-      confirmPassword: ['', [Validators.required]],
-    });
+      confirmPassword: ['', Validators.required],
+    }, {validators: Register.passwordMatchValidator});
   }
 
   onRegister() {
     if (this.myForm.invalid) return;
-    this.loading=true;
-    const user = this.myForm.value;
-    this.authService.registerUser(user).subscribe({
-      next: (res) => {
-        this. authService.setRegistredUser(user);
-        //alert("veillez confirmer votre email");
-        this.loading=false;
-        this.toastr.success('veillez confirmer votre email', 'Confirmation');
-        this.router.navigate(["/verifEmail"]);
-
+    this.loading = true;
+    const {username, email, password} = this.myForm.value;
+    const payload = {username, email, password};
+    this.authService.registerUser(payload).subscribe({
+      next: () => {
+        this.authService.setPendingRegistration({username, email});
+        this.loading = false;
+        this.toastr.success('Veuillez confirmer votre email', 'Confirmation');
+        this.router.navigate(['/verif-email']);
       },
-      error: (err: any) => {
-        this.loading=false;
-        if ((err.error.errorCode ===  "USER_EMAIL_ALREADY_EXISTS")) {
-          this.err = "Email already used!";
-        }
+      error: (err: HttpErrorResponse) => {
+        this.loading = false;
+        this.err = err.error?.errorCode === 'USER_EMAIL_ALREADY_EXISTS'
+          ? 'Cet email est déjà utilisé.'
+          : 'Une erreur est survenue. Veuillez réessayer.';
       },
     });
   }

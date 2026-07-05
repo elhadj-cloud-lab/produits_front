@@ -21,7 +21,7 @@
     </div>
   }
 
-  @if (!isLoading && totalProduits > 0) {
+  @if (!isLoading && stats && stats.totalProduits > 0) {
 
     <!-- KPI -->
     <div class="row g-3 mb-4">
@@ -32,7 +32,7 @@
                style="font-size: 0.7rem; letter-spacing: .05em;">
               Total produits
             </p>
-            <h2 class="mb-1 fw-bold text-primary">{{ totalProduits }}</h2>
+            <h2 class="mb-1 fw-bold text-primary">{{ stats.totalProduits }}</h2>
             <small class="text-muted">dans le catalogue</small>
           </div>
           <div class="card-footer bg-transparent border-0 pt-0">
@@ -51,7 +51,7 @@
               Prix moyen
             </p>
             <h2 class="mb-1 fw-bold text-info">
-              {{ avgPrice | currency:'EUR':'symbol':'1.2-2':'fr' }}
+              {{ stats.avgPrice | currency:'EUR':'symbol':'1.2-2':'fr' }}
             </h2>
             <small class="text-muted">par produit</small>
           </div>
@@ -70,7 +70,7 @@
                style="font-size: 0.7rem; letter-spacing: .05em;">
               Catégories actives
             </p>
-            <h2 class="mb-1 fw-bold text-warning">{{ nbCategories }}</h2>
+            <h2 class="mb-1 fw-bold text-warning">{{ stats.nbCategories }}</h2>
             <small class="text-muted">avec au moins un produit</small>
           </div>
           <div class="card-footer bg-transparent border-0 pt-0">
@@ -112,7 +112,7 @@
                 </tr>
               </thead>
               <tbody>
-                @for (prod of topProduits; track prod.idProduit; let i = $index) {
+                @for (prod of stats.topProduits; track prod.idProduit; let i = $index) {
                   <tr>
                     <td class="ps-3 text-muted fw-medium">{{ i + 1 }}</td>
                     <td class="fw-medium">{{ prod.nomProduit }}</td>
@@ -153,7 +153,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (stat of prodCategStats; track stat.label) {
+            @for (stat of stats.prodCategStats; track stat.label) {
               <tr>
                 <td class="ps-3 fw-medium">{{ stat.label }}</td>
                 <td>{{ stat.count }}</td>
@@ -161,11 +161,11 @@
                   <div class="d-flex align-items-center gap-2">
                     <div class="progress flex-grow-1" style="height: 6px;">
                       <div class="progress-bar bg-primary"
-                           [style.width.%]="(stat.count / totalProduits) * 100">
+                           [style.width.%]="(stat.count / stats.totalProduits) * 100">
                       </div>
                     </div>
                     <span class="text-muted small">
-                      {{ (stat.count / totalProduits * 100) | number:'1.0-0' }}%
+                      {{ (stat.count / stats.totalProduits * 100) | number:'1.0-0' }}%
                     </span>
                   </div>
                 </td>
@@ -178,7 +178,7 @@
 
   }
 
-  @if (!isLoading && totalProduits === 0) {
+  @if (!isLoading && (!stats || stats.totalProduits === 0)) {
     <div class="text-center text-muted py-5">
       <div class="mb-2" style="font-size: 3rem;">📦</div>
       <h5>Aucun produit dans le catalogue</h5>

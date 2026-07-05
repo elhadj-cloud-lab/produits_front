@@ -12,6 +12,14 @@
           <input type="text" name="code" [(ngModel)]="code" class="formcontrol"
                  placeholder=" code de confirmation">
         </div>
+        @if (user.username) {
+          <p class="text-muted small">Compte : {{ user.username }}</p>
+        }
+        <div class="txt_field mt-2">
+          <label>Mot de passe</label>
+          <input type="password" name="password" [(ngModel)]="password" class="formcontrol"
+                 placeholder="Mot de passe utilisé à l'inscription">
+        </div>
         <div class="mt-2">
           <button type="button" class="btn btn-success" (click)="onValidateEmail()">Confirmer</button>
         </div>

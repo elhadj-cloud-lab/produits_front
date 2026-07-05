@@ -1,4 +1,5 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, DestroyRef, inject, OnInit} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {ProduitService} from '../services/produit-service';
 import {ProduitModel} from '../model/produit.model';
 import {ActivatedRoute, Router} from '@angular/router';
@@ -7,10 +8,12 @@ import {DatePipe} from '@angular/common';
 import {Categorie} from '../model/categorie.model';
 import {AuthService} from '../services/auth-service';
 import {Image} from '../model/image.model';
+import {imageToDataUrl, ImageUrlPipe} from '../shared/image-url.pipe';
+import {ToastrService} from 'ngx-toastr';
 
 @Component({
   selector: 'app-update-produit',
-  imports: [FormsModule, DatePipe],
+  imports: [FormsModule, DatePipe, ImageUrlPipe],
   templateUrl: './update-produit.html',
   styles: ``,
 })
@@ -25,6 +28,9 @@ export class UpdateProduit implements OnInit {
   isUploadingImage = false;
   confirmDeleteId: number | null = null;
 
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly toastr = inject(ToastrService);
+
   constructor(
     private activatedRoute: ActivatedRoute,
     public router: Router,
@@ -33,33 +39,46 @@ export class UpdateProduit implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.produitService.listeCategories().subscribe(cats => (this.categories = cats));
+    this.produitService.listeCategories().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: cats => (this.categories = cats),
+      error: () => this.toastr.error('Impossible de charger les catégories', 'Erreur'),
+    });
     this.produitService
       .consulterProduit(this.activatedRoute.snapshot.params['id'])
-      .subscribe(produit => {
-        this.currentProduit = produit;
-        this.updatedCatId = produit.categorie?.idCategorie ?? 0;
-        this.loadProductImages();
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: produit => {
+          this.currentProduit = produit;
+          this.updatedCatId = produit.categorie?.idCategorie ?? 0;
+          this.loadProductImages();
+        },
+        error: () => this.toastr.error('Impossible de charger le produit', 'Erreur'),
       });
   }
 
   loadProductImages() {
-    this.produitService.getImagesByProduct(this.currentProduit.idProduit).subscribe(images => {
-      this.currentProduit.images = images ?? [];
-      if (images?.length > 0) {
-        this.mainImageSrc = this.getImageUrl(images[0]);
-      }
+    this.produitService.getImagesByProduct(this.currentProduit.idProduit).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: images => {
+        this.currentProduit.images = images ?? [];
+        if (images?.length > 0) {
+          this.mainImageSrc = imageToDataUrl(images[0]);
+        }
+      },
+      error: () => this.toastr.error('Impossible de charger les images', 'Erreur'),
     });
   }
 
   updateProduit() {
     this.currentProduit.categorie = this.categories.find(
-      cat => cat.idCategorie == this.updatedCatId,
+      cat => cat.idCategorie === this.updatedCatId,
     );
     this.isLoading = true;
-    this.produitService.updateProduit(this.currentProduit).subscribe({
+    this.produitService.updateProduit(this.currentProduit).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => this.router.navigate(['produits']),
-      error: () => (this.isLoading = false),
+      error: () => {
+        this.isLoading = false;
+        this.toastr.error('Impossible d\'enregistrer le produit', 'Erreur');
+      },
     });
   }
 
@@ -78,15 +97,19 @@ export class UpdateProduit implements OnInit {
     this.isUploadingImage = true;
     this.produitService
       .uploadImageProd(this.uploadedImage, this.uploadedImage.name, this.currentProduit.idProduit)
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (img: Image) => {
           this.isUploadingImage = false;
           if (!this.currentProduit.images) this.currentProduit.images = [];
           this.currentProduit.images.push(img);
-          this.mainImageSrc = this.getImageUrl(img);
+          this.mainImageSrc = imageToDataUrl(img);
           this.uploadedImage = undefined;
         },
-        error: () => (this.isUploadingImage = false),
+        error: () => {
+          this.isUploadingImage = false;
+          this.toastr.error('Impossible d\'ajouter l\'image', 'Erreur');
+        },
       });
   }
 
@@ -100,29 +123,21 @@ export class UpdateProduit implements OnInit {
 
   supprimerImage(img: Image) {
     this.confirmDeleteId = null;
-    this.produitService.supprimerImage(img.idImage).subscribe(() => {
-      const index = this.currentProduit.images.indexOf(img);
-      if (index > -1) this.currentProduit.images.splice(index, 1);
-      this.mainImageSrc =
-        this.currentProduit.images.length > 0
-          ? this.getImageUrl(this.currentProduit.images[0])
-          : 'assets/default-image.png';
+    this.produitService.supprimerImage(img.idImage).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        const index = this.currentProduit.images.indexOf(img);
+        if (index > -1) this.currentProduit.images.splice(index, 1);
+        this.mainImageSrc =
+          this.currentProduit.images.length > 0
+            ? imageToDataUrl(this.currentProduit.images[0])
+            : 'assets/default-image.png';
+      },
+      error: () => this.toastr.error('Impossible de supprimer l\'image', 'Erreur'),
     });
   }
 
   selectMainImage(img: Image) {
-    this.mainImageSrc = this.getImageUrl(img);
+    this.mainImageSrc = imageToDataUrl(img);
   }
 
-  getImageUrl(img: Image): string {
-    if (!img?.image) return 'assets/default-image.png';
-    if (typeof img.image === 'string') {
-      return `data:${img.type};base64,${img.image}`;
-    }
-    if (Array.isArray(img.image)) {
-      const base64 = btoa(img.image.map(b => String.fromCharCode(b & 0xff)).join(''));
-      return `data:${img.type};base64,${base64}`;
-    }
-    return 'assets/default-image.png';
-  }
 }

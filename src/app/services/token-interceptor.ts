@@ -37,7 +37,13 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
     }
 
     return authService.refreshAccessToken().pipe(
-      switchMap(() => sendWithToken(authService.getToken(), true)),
+      switchMap(() => {
+        const newToken = authService.getToken();
+        if (!newToken) {
+          return throwError(() => new Error('Token manquant après refresh'));
+        }
+        return sendWithToken(newToken, true);
+      }),
       catchError(() => {
         authService.logout();
         return throwError(() => new Error('Session expirée'));
@@ -60,7 +66,11 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
 
   const token = authService.getToken();
 
-  if (token && authService.isTokenExpired() && authService.getRefreshToken()) {
+  if (!token) {
+    return next(req);
+  }
+
+  if (authService.isTokenExpired() && authService.getRefreshToken()) {
     return refreshAndRetry();
   }
 

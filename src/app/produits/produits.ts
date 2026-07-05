@@ -1,11 +1,13 @@
-import {Component, OnInit, signal} from '@angular/core';
+import {Component, DestroyRef, inject, OnInit, signal} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {RouterLink} from '@angular/router';
 import {CurrencyPipe, DatePipe} from '@angular/common';
 import {ProduitModel} from '../model/produit.model';
 import {ProduitService} from '../services/produit-service';
 import {AuthService} from '../services/auth-service';
 import {Categorie} from '../model/categorie.model';
-import {Image} from '../model/image.model';
+import {imageToDataUrl} from '../shared/image-url.pipe';
+import {ToastrService} from 'ngx-toastr';
 
 @Component({
   selector: 'app-produits',
@@ -24,6 +26,9 @@ export class Produits implements OnInit {
   // et les rerend au moment précis où le signal change
   readonly imageUrls = signal<Record<number, string>>({});
 
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly toastr = inject(ToastrService);
+
   constructor(
     private produitService: ProduitService,
     public authService: AuthService,
@@ -36,39 +41,28 @@ export class Produits implements OnInit {
   chargerProduits() {
     this.isLoading = true;
     this.imageUrls.set({});
-    this.produitService.listerProduits().subscribe(prods => {
-      this.allProduits = prods;
-      this.applyFilter();
-      this.isLoading = false;
-
-      const catMap = new Map<number, Categorie>();
-      prods.forEach(p => {
-        if (p.categorie?.idCategorie) catMap.set(p.categorie.idCategorie, p.categorie);
-      });
-      this.categories = Array.from(catMap.values());
-
-      prods.forEach(prod => this.chargerImageProduit(prod));
+    this.produitService.listerProduits().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: prods => {
+        this.allProduits = prods;
+        this.applyFilter();
+        this.isLoading = false;
+        this.categories = this.produitService.extractCategories(prods);
+        prods.forEach(prod => this.chargerImageProduit(prod));
+      },
+      error: () => {
+        this.isLoading = false;
+        this.toastr.error('Impossible de charger les produits', 'Erreur');
+      },
     });
   }
 
   private chargerImageProduit(prod: ProduitModel) {
-    this.produitService.getImagesByProduct(prod.idProduit).subscribe(images => {
+    this.produitService.getImagesByProduct(prod.idProduit).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(images => {
       if (images?.length > 0) {
         // update() garantit une mise à jour atomique du signal
-        this.imageUrls.update(prev => ({...prev, [prod.idProduit]: this.toDataUrl(images[0])}));
+        this.imageUrls.update(prev => ({...prev, [prod.idProduit]: imageToDataUrl(images[0])}));
       }
     });
-  }
-
-  private toDataUrl(img: Image): string {
-    if (Array.isArray(img.image)) {
-      const base64 = btoa(img.image.map(b => String.fromCharCode(b & 0xff)).join(''));
-      return `data:${img.type};base64,${base64}`;
-    }
-    if (typeof img.image === 'string') {
-      return `data:${img.type};base64,${img.image}`;
-    }
-    return '';
   }
 
   filtrerParCategorie(catId: number | null) {
@@ -80,7 +74,7 @@ export class Produits implements OnInit {
     this.filteredProduits =
       this.selectedCatId === null
         ? [...this.allProduits]
-        : this.allProduits.filter(p => p.categorie?.idCategorie == this.selectedCatId);
+        : this.allProduits.filter(p => p.categorie?.idCategorie === this.selectedCatId);
   }
 
   confirmDelete(id: number) {
@@ -93,9 +87,12 @@ export class Produits implements OnInit {
 
   supprimerProduit(produit: ProduitModel) {
     this.confirmDeleteId = null;
-    this.produitService.supprimerProduit(produit.idProduit).subscribe(() => {
-      this.allProduits = this.allProduits.filter(p => p.idProduit !== produit.idProduit);
-      this.applyFilter();
+    this.produitService.supprimerProduit(produit.idProduit).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.allProduits = this.allProduits.filter(p => p.idProduit !== produit.idProduit);
+        this.applyFilter();
+      },
+      error: () => this.toastr.error('Impossible de supprimer le produit', 'Erreur'),
     });
   }
 }

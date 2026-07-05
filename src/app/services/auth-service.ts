@@ -4,7 +4,7 @@ import {HttpClient, HttpResponse} from '@angular/common/http';
 import {AppUser, User} from '../model/user.model';
 import {DashboardStats} from '../model/stats.model';
 import {JwtHelperService} from '@auth0/angular-jwt';
-import {catchError, finalize, Observable, shareReplay, tap, throwError} from 'rxjs';
+import {finalize, Observable, shareReplay, tap, throwError} from 'rxjs';
 import {environment} from '../../environments/environment';
 
 @Injectable({
@@ -12,33 +12,41 @@ import {environment} from '../../environments/environment';
 })
 export class AuthService {
 
-  public loggedUser!:string;
-  public isloggedIn: Boolean = false;
-  public roles!:string[];
+  public loggedUser?: string;
+  public isloggedIn = false;
+  public roles?: string[];
   private helper = new JwtHelperService();
-  public regitredUser: User = new User();
+  private static readonly PENDING_REG_KEY = 'pendingRegistration';
 
   apiURL: string = environment.apiURLAuth;
-  token!:string;
-  private refreshTokenValue!:string;
+  private token?: string;
+  private refreshTokenValue?: string;
   private refreshInProgress: Observable<HttpResponse<void>> | null = null;
 
   constructor(private router: Router,
               private http : HttpClient) { }
 
-  setRegistredUser(user: User) {
-    this.regitredUser = user;
-  }
-  getRegistredUser() {
-    return this.regitredUser;
+  setPendingRegistration(data: Pick<User, 'username' | 'email'>) {
+    sessionStorage.setItem(AuthService.PENDING_REG_KEY, JSON.stringify(data));
   }
 
-  login(user : User)
-  {
+  getPendingRegistration(): Pick<User, 'username' | 'email'> | null {
+    const raw = sessionStorage.getItem(AuthService.PENDING_REG_KEY);
+    if (!raw) {
+      return null;
+    }
+    return JSON.parse(raw);
+  }
+
+  clearPendingRegistration() {
+    sessionStorage.removeItem(AuthService.PENDING_REG_KEY);
+  }
+
+  login(user: User) {
     return this.http.post<User>(this.apiURL+'/login', user , {observe:'response'});
   }
 
-  getToken():string {
+  getToken(): string | undefined {
     return this.token;
   }
 
@@ -46,7 +54,7 @@ export class AuthService {
     return this.refreshTokenValue ?? localStorage.getItem('refreshToken');
   }
 
-  saveTokens(accessToken: string, refreshToken: string){
+  saveTokens(accessToken: string, refreshToken: string) {
     localStorage.setItem('jwt', accessToken);
     localStorage.setItem('refreshToken', refreshToken);
     this.token = accessToken;
@@ -55,16 +63,10 @@ export class AuthService {
     this.decodeJWT();
   }
 
-  saveToken(jwt:string){
-    localStorage.setItem('jwt', jwt);
-    this.token = jwt;
-    this.isloggedIn = true;
-    this.decodeJWT();
-  }
-
-  decodeJWT()  {
-    if (this.token == undefined)
+  decodeJWT() {
+    if (!this.token) {
       return;
+    }
     const decodedToken = this.helper.decodeToken(this.token);
     this.roles = decodedToken.roles;
     this.loggedUser = decodedToken.sub;
@@ -75,7 +77,7 @@ export class AuthService {
     const storedRefreshToken = localStorage.getItem('refreshToken');
     if (storedToken) {
       this.token = storedToken;
-      this.refreshTokenValue = storedRefreshToken ?? undefined!;
+      this.refreshTokenValue = storedRefreshToken ?? undefined;
       if (!this.isTokenExpired()) {
         this.isloggedIn = true;
         this.decodeJWT();
@@ -103,9 +105,10 @@ export class AuthService {
       tap(response => {
         const accessToken = response.headers.get('Authorization');
         const newRefreshToken = response.headers.get('Refresh-Token');
-        if (accessToken && newRefreshToken) {
-          this.saveTokens(accessToken, newRefreshToken);
+        if (!accessToken || !newRefreshToken) {
+          throw new Error('Réponse refresh invalide');
         }
+        this.saveTokens(accessToken, newRefreshToken);
       }),
       finalize(() => {
         this.refreshInProgress = null;
@@ -121,10 +124,10 @@ export class AuthService {
     const token = this.getToken();
 
     const clearLocal = () => {
-      this.loggedUser = undefined!;
-      this.roles = undefined!;
-      this.token = undefined!;
-      this.refreshTokenValue = undefined!;
+      this.loggedUser = undefined;
+      this.roles = undefined;
+      this.token = undefined;
+      this.refreshTokenValue = undefined;
       this.isloggedIn = false;
       localStorage.removeItem('jwt');
       localStorage.removeItem('refreshToken');
@@ -154,20 +157,20 @@ export class AuthService {
     return this.http.get<DashboardStats>(this.apiURL + '/api/admin/stats/dashboard');
   }
 
-  isAdmin():Boolean{
+  isAdmin(): boolean {
     if (!this.roles)
       return false;
     return  (this.roles.indexOf('ADMIN') >=0);
   }
 
-  isTokenExpired(): Boolean {
+  isTokenExpired(): boolean {
     if (!this.token) {
       return true;
     }
     return this.helper.isTokenExpired(this.token);
   }
 
-  registerUser(user: User) {
+  registerUser(user: Pick<User, 'username' | 'email' | 'password'>) {
     return this.http.post<User>(this.apiURL + '/register', user, {
       observe: 'response',
     });
