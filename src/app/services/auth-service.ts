@@ -4,7 +4,7 @@ import {HttpClient, HttpResponse} from '@angular/common/http';
 import {AppUser, User} from '../model/user.model';
 import {DashboardStats} from '../model/stats.model';
 import {JwtHelperService} from '@auth0/angular-jwt';
-import {catchError, finalize, Observable, shareReplay, tap, throwError} from 'rxjs';
+import {finalize, Observable, shareReplay, tap, throwError} from 'rxjs';
 import {environment} from '../../environments/environment';
 
 @Injectable({
@@ -13,10 +13,10 @@ import {environment} from '../../environments/environment';
 export class AuthService {
 
   public loggedUser!:string;
-  public isloggedIn: Boolean = false;
+  public isloggedIn = false;
   public roles!:string[];
   private helper = new JwtHelperService();
-  public regitredUser: User = new User();
+  public registeredUser: User = new User();
 
   apiURL: string = environment.apiURLAuth;
   token!:string;
@@ -26,11 +26,11 @@ export class AuthService {
   constructor(private router: Router,
               private http : HttpClient) { }
 
-  setRegistredUser(user: User) {
-    this.regitredUser = user;
+  setRegisteredUser(user: User) {
+    this.registeredUser = user;
   }
-  getRegistredUser() {
-    return this.regitredUser;
+  getRegisteredUser() {
+    return this.registeredUser;
   }
 
   login(user : User)
@@ -154,13 +154,13 @@ export class AuthService {
     return this.http.get<DashboardStats>(this.apiURL + '/api/admin/stats/dashboard');
   }
 
-  isAdmin():Boolean{
+  isAdmin(): boolean {
     if (!this.roles)
       return false;
     return  (this.roles.indexOf('ADMIN') >=0);
   }
 
-  isTokenExpired(): Boolean {
+  isTokenExpired(): boolean {
     if (!this.token) {
       return true;
     }

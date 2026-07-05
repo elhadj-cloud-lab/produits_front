@@ -1,4 +1,5 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, DestroyRef, inject, OnInit} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {Categorie} from '../model/categorie.model';
 import {ProduitService} from '../services/produit-service';
 import {CommonModule} from '@angular/common';
@@ -12,12 +13,14 @@ import {AuthService} from '../services/auth-service';
   styleUrl: './liste-categories.css',
 })
 export class ListeCategories implements OnInit {
-  categories! : Categorie[];
-  updatedCategorie: Categorie = {nomCategorie:"", description:""};
-  ajout:boolean=true;
+  categories: Categorie[] = [];
+  updatedCategorie: Categorie = {nomCategorie: '', description: ''};
+  ajout = true;
 
-  constructor(private produitService : ProduitService,
-              public authService : AuthService) { }
+  private readonly destroyRef = inject(DestroyRef);
+
+  constructor(private produitService: ProduitService,
+              public authService: AuthService) {}
 
   ngOnInit(): void {
     this.chargerCategories()
@@ -28,16 +31,17 @@ export class ListeCategories implements OnInit {
       ? this.produitService.ajouterCategorie(cat)
       : this.produitService.updateCategorie(cat);
 
-    operation.subscribe(() => {
-      this.chargerCategories();
-      this.nouvelleCategorie(); // reset formulaire après save
+    operation.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.chargerCategories();
+        this.nouvelleCategorie();
+      },
     });
   }
 
   chargerCategories(){
-    this.produitService.listeCategories().subscribe(cats => {
-      this.categories = cats;
-      console.log(cats);
+    this.produitService.listeCategories().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: cats => (this.categories = cats),
     });
   }
 
@@ -55,8 +59,8 @@ export class ListeCategories implements OnInit {
     if (!cat.idCategorie) return;
 
     if (confirm(`Supprimer la catégorie "${cat.nomCategorie}" ?`)) {
-      this.produitService.supprimerCategorie(cat.idCategorie).subscribe(() => {
-        this.chargerCategories();
+      this.produitService.supprimerCategorie(cat.idCategorie).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: () => this.chargerCategories(),
       });
     }
   }

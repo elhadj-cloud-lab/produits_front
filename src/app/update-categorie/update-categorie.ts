@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {Categorie} from '../model/categorie.model';
 import {FormsModule} from '@angular/forms';
 import {AuthService} from '../services/auth-service';
@@ -9,14 +9,11 @@ import {AuthService} from '../services/auth-service';
   templateUrl: './update-categorie.html',
   styleUrl: './update-categorie.css',
 })
-export class UpdateCategorie implements OnInit {
+export class UpdateCategorie {
 
-  constructor(public authService: AuthService) { }
+  constructor(public authService: AuthService) {}
 
-  ngOnInit(): void {
-    console.log("ngOnInit du composant UpdateCategorie ",this.categorie);
-  }
-  @Input() categorie! : Categorie;
+  @Input() categorie!: Categorie;
 
   @Input() ajout!:boolean;
 

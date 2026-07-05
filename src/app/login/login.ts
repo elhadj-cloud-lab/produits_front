@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import {Component} from '@angular/core';
+import {HttpErrorResponse} from '@angular/common/http';
 import {User} from '../model/user.model';
 import {AuthService} from '../services/auth-service';
 import {Router, RouterLink} from '@angular/router';
@@ -19,21 +20,22 @@ export class Login {
   constructor(private authService : AuthService,
               private  router: Router) { }
 
-  onLoggedin(){
+  onLoggedin() {
     this.authService.login(this.user).subscribe({
-      next: (data) => {
-        let jwToken = data.headers.get('Authorization')!;
-        let refreshToken = data.headers.get('Refresh-Token')!;
-        this.authService.saveTokens(jwToken, refreshToken);
-        this.router.navigate(['/']);
+      next: data => {
+        const accessToken = data.headers.get('Authorization');
+        const refreshToken = data.headers.get('Refresh-Token');
+        if (accessToken && refreshToken) {
+          this.authService.saveTokens(accessToken, refreshToken);
+          this.router.navigate(['/']);
+        }
       },
-      error: (err: any) => {
+      error: (err: HttpErrorResponse) => {
         this.err = 1;
-        if (err.error.errorCause=='disabled')
-          this.message="Utilisateur désactivé, Veuillez contacter votre Administrateur";
-      }
+        if (err.error?.errorCause === 'disabled')
+          this.message = 'Utilisateur désactivé, Veuillez contacter votre Administrateur';
+      },
     });
-
   }
 
 }
